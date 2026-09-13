@@ -385,6 +385,18 @@ RUN set -ex \
     && test -x "${TNQVM_PREFIX}/bin/circuit_runner.tnqvm" \
     && test -f "${TNQVM_PREFIX}/xacc/plugins/libtnqvm.so"
 
+# The shim's QRMI/QDMI dependencies. Keep these in step with do_qfw_build.sh,
+# which installs the same packages for the developer build. The two lists
+# drifted once already, and the image kept building without error while its
+# QDMI leg could not import.
+#
+# mqt-core 3.9.2: services/svc_lib_qpm/drivers/qdmi_driver.py imports
+# mqt.core.qdmi.driver, which does not exist before 3.9.
+#
+# iqm-qdmi>=1.4 without the [qiskit] extra, as do_qfw_build.sh does. The shim
+# never imports iqm.qdmi.qiskit, and Qiskit already comes from
+# setup/requirements.txt. Combined with an older mqt-core pin, that extra is
+# also what let pip settle on iqm-qdmi 1.2.0.
 RUN set -ex \
     && python3 -m venv "${QFW_IMAGE_VENV}" \
     && "${QFW_IMAGE_VENV}/bin/python" -m pip install --upgrade \
@@ -393,8 +405,8 @@ RUN set -ex \
         -r "${QFW_IMAGE_SOURCE}/setup/build-requirements.txt" \
         -r "${QFW_IMAGE_SOURCE}/setup/requirements.txt" \
         "qrmi==${QRMI_VERSION}" \
-        'iqm-qdmi[qiskit]' \
-        'mqt-core==3.7.0' \
+        'iqm-qdmi>=1.4' \
+        'mqt-core==3.9.2' \
         'jsonschema>=4' \
     && PATH="${QFW_IMAGE_VENV}/bin:${PATH}" cmake \
         -S "${QFW_IMAGE_SOURCE}" \
