@@ -745,6 +745,74 @@ If you only need to see what a helper would run:
 
 </details>
 
+<details>
+<summary>SELinux hosts (Fedora, RHEL, Rocky, CentOS Stream)</summary>
+
+The compose file bind-mounts three host paths into the cluster containers:
+
+```text
+${QFW_CONTAINER_BASE}        -> /workspace/qfw-container-base
+${QFW_CONTAINER_BASE}/home   -> /workspace/home
+./shared-dir                 -> /mnt
+```
+
+These matter even if you never build a development override. Test users' home
+directories and their `qfw-runs` live under `/workspace/home`, and the site
+services publish their directory-service connection file under
+`/workspace/qfw-container-base`.
+
+On a host with SELinux enforcing, a bind mount keeps whatever label the host
+directory already carries, container processes run as `container_t`, and access
+is denied:
+
+```text
+$ podman exec -ti slurmctld ls -l /workspace/qfw-container-base
+ls: cannot open directory '/workspace/qfw-container-base': Permission denied
+```
+
+Every one of those mounts therefore carries the `:z` suffix, which asks the
+container runtime to relabel the directories as shared container content. It is
+`:z` rather than `:Z` because most services mount the same paths, and `:Z` would
+give each service a private label and lock the others out. Nothing is required
+on your side. The suffix is ignored on hosts without SELinux, so macOS, Debian
+and Ubuntu are unaffected.
+
+If you add a service, give its bind mounts the same suffix. A service without it
+can appear to work, because the other services relabel the same directories, and
+then fail when it happens to start first or is started on its own.
+
+`./do_qfw_build.sh` checks for an unreadable mount before it looks for a [QFw]
+checkout, and names the label as the likely cause instead of reporting a missing
+clone:
+
+```text
+The shared mount /workspace/qfw-container-base exists but its contents cannot be read.
+On an SELinux host this is the bind-mount label, not a missing checkout.
+```
+
+There are two cases where `:z` is not the right tool:
+
+- Relabelling is recursive and happens in place. `QFW_CONTAINER_BASE` defaults to
+  `./shared-dir` inside this repository, which is the intended target. Do not
+  point it at your home directory or another broadly shared path.
+- The filesystem has to support extended attributes. Relabelling fails on NFS and
+  similar, so a shared directory on a network filesystem needs another approach.
+
+In either case, remove the suffix and label a repository-local directory
+yourself:
+
+```bash
+sudo semanage fcontext -a -t container_file_t "$(pwd)/shared-dir(/.*)?"
+sudo restorecon -R shared-dir
+```
+
+`chcon -Rt container_file_t shared-dir` has the same immediate effect and is
+useful for a one-off test, but it does not survive `restorecon` or a filesystem
+relabel. When it is reverted, access fails again with nothing to connect the
+failure to a relabel that happened days earlier.
+
+</details>
+
 [DEFw]: https://github.com/openQSE/DEFw
 [libfabric]: https://github.com/ofiwg/libfabric
 [NWQ-Sim]: https://github.com/pnnl/NWQ-Sim
