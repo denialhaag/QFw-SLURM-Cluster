@@ -217,6 +217,97 @@ RUN set -ex \
     && yum clean all \
     && rm -rf /var/cache/yum
 
+# ----------------------------------------------------------------------
+# Mochi RPC stack for the DEFw v2 prototype
+#
+# DEFw v2 (docs/design_v2.md in openQSE/DEFw) is built on Mercury and Margo
+# from Argonne's Mochi project. The versions match that document's Appendix B.
+# Spack marks Mercury 2.4.0 and older as conflicting with libfabric 2.x, so
+# 2.4.1 is the oldest release that works with the libfabric built above.
+#
+# The design pins json-c 0.19. Margo accepts any json-c, so the image uses the
+# distribution's json-c-devel, which Slurm's JSON serializer already links.
+# That keeps a single libjson-c in the image.
+#
+# Mercury is configured like Spack's default mercury package: the OFI and
+# shared-memory plugins, its bundled Boost preprocessor headers, and its
+# performance tests (hg_rate, hg_bw_read, hg_bw_write). The DEFw v2 success
+# criteria use those tests as the bulk-transfer reference. Checksum support is
+# compiled in, but Mercury leaves it off unless a caller enables it at init.
+# Argobots gets --enable-perf-opt, also Spack's default. Its 1.2 release still
+# reports version 1.2rc1, because upstream never bumped version.m4 for it, so
+# the build checks Argobots by checksum rather than by pkg-config version.
+#
+# The libraries and tools carry an RPATH, so they run without LD_LIBRARY_PATH.
+# `module load libfabric mochi` adds the stack to PATH, pkg-config and CMake.
+# ----------------------------------------------------------------------
+ARG ARGOBOTS_VERSION=1.2
+ARG ARGOBOTS_SHA256=1c056429d9c0a27c041d4734f6318b801fc2ec671854e42c35251c4c7d0d43e1
+ARG MERCURY_VERSION=2.4.1
+ARG MERCURY_SHA256=8a372416f3fca28d402ac7f7b73f0a7dd5d4b88785281ad9e6076e105e4840b9
+ARG MARGO_VERSION=0.24.2
+ARG MARGO_SHA256=eabfee49015349072f24cf6a3fbbc56a9345352580529f1f5a0d889577658cb5
+ARG MOCHI_PREFIX=/opt/qfw/mochi
+RUN set -ex \
+    && export PKG_CONFIG_PATH="${MOCHI_PREFIX}/lib/pkgconfig:${LIBFABRIC_PREFIX}/lib/pkgconfig" \
+    && mkdir -p /tmp/mochi \
+    && cd /tmp/mochi \
+    && curl -fsSL -o argobots.tar.gz \
+        "https://github.com/pmodels/argobots/releases/download/v${ARGOBOTS_VERSION}/argobots-${ARGOBOTS_VERSION}.tar.gz" \
+    && curl -fsSL -o mercury.tar.bz2 \
+        "https://github.com/mercury-hpc/mercury/releases/download/v${MERCURY_VERSION}/mercury-${MERCURY_VERSION}.tar.bz2" \
+    && curl -fsSL -o margo.tar.gz \
+        "https://github.com/mochi-hpc/mochi-margo/archive/refs/tags/v${MARGO_VERSION}.tar.gz" \
+    && printf '%s  %s\n' \
+        "${ARGOBOTS_SHA256}" argobots.tar.gz \
+        "${MERCURY_SHA256}" mercury.tar.bz2 \
+        "${MARGO_SHA256}" margo.tar.gz \
+        | sha256sum -c - \
+    && mkdir argobots mercury margo \
+    && tar --no-same-owner -xzf argobots.tar.gz -C argobots --strip-components=1 \
+    && tar --no-same-owner -xjf mercury.tar.bz2 -C mercury --strip-components=1 \
+    && tar --no-same-owner -xzf margo.tar.gz -C margo --strip-components=1 \
+    && cd /tmp/mochi/argobots \
+    && ./configure --prefix="${MOCHI_PREFIX}" \
+        --enable-perf-opt --disable-debug --disable-valgrind \
+    && make -j"$(nproc)" \
+    && make install \
+    && cd /tmp/mochi \
+    && cmake -S mercury -B mercury-build \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX="${MOCHI_PREFIX}" \
+        -DCMAKE_INSTALL_RPATH="${MOCHI_PREFIX}/lib" \
+        -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_TESTING=ON \
+        -DBUILD_TESTING_UNIT=OFF \
+        -DBUILD_TESTING_PERF=ON \
+        -DMERCURY_USE_BOOST_PP=ON \
+        -DMERCURY_USE_SYSTEM_BOOST=OFF \
+        -DMERCURY_USE_CHECKSUMS=ON \
+        -DMERCURY_USE_SYSTEM_MCHECKSUM=OFF \
+        -DMERCURY_USE_XDR=OFF \
+        -DNA_USE_OFI=ON \
+        -DNA_USE_SM=ON \
+    && cmake --build mercury-build --parallel "$(nproc)" \
+    && cmake --install mercury-build \
+    && cmake -S margo -B margo-build \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX="${MOCHI_PREFIX}" \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_INSTALL_RPATH="${MOCHI_PREFIX}/lib" \
+        -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
+        -DCMAKE_PREFIX_PATH="${MOCHI_PREFIX}" \
+    && cmake --build margo-build --parallel "$(nproc)" \
+    && cmake --install margo-build \
+    && pkg-config --exists argobots \
+    && test "$(pkg-config --modversion mercury)" = "${MERCURY_VERSION}" \
+    && test "$(pkg-config --modversion margo)" = "${MARGO_VERSION}" \
+    && test -x "${MOCHI_PREFIX}/bin/margo-info" \
+    && test -x "${MOCHI_PREFIX}/bin/hg_bw_read" \
+    && cd / \
+    && rm -rf /tmp/mochi
+
 ARG QFW_BUILD_JOBS=4
 
 # The image contains a complete release installation. A checkout mounted under
@@ -477,6 +568,7 @@ ENV QFW_IMAGE_PREFIX=${QFW_IMAGE_PREFIX} \
     TNQVM_PREFIX=${TNQVM_PREFIX} \
     QRMI_PREFIX=${QRMI_PREFIX} \
     QRMI_VERSION=${QRMI_VERSION} \
+    MOCHI_PREFIX=${MOCHI_PREFIX} \
     MODULEPATH=/etc/modulefiles:/usr/share/Modules/modulefiles:/usr/share/modulefiles \
     LD_LIBRARY_PATH=${OMPI_PREFIX}/lib:${OMPI_PREFIX}/lib64:${QRMI_PREFIX}/lib:${LD_LIBRARY_PATH}
 
@@ -491,6 +583,21 @@ RUN set -ex \
     && command -v pterm \
     && command -v circuit_runner.nwqsim \
     && rm -f /tmp/qfw-simulator-environment.sh
+
+# The Mochi module must resolve Margo through pkg-config, and the installed
+# tools must find their libraries through RPATH alone.
+RUN set -ex \
+    && env -i PATH=/usr/share/Modules/bin:/usr/bin:/bin \
+        MODULEPATH=/etc/modulefiles:/usr/share/Modules/modulefiles \
+        modulecmd sh load libfabric mochi \
+        >/tmp/qfw-mochi-environment.sh \
+    && . /tmp/qfw-mochi-environment.sh \
+    && command -v margo-info \
+    && command -v hg_bw_read \
+    && pkg-config --cflags --libs margo \
+    && rm -f /tmp/qfw-mochi-environment.sh \
+    && ! env -u LD_LIBRARY_PATH ldd "${MOCHI_PREFIX}/bin/margo-info" \
+        "${MOCHI_PREFIX}/bin/hg_bw_read" | grep 'not found'
 
 # TJN: Add a basic cgroup.conf b/c appears to be needed now
 COPY cgroup.conf /etc/slurm/cgroup.conf
