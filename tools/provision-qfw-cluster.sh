@@ -33,7 +33,11 @@ awk -F: '
 	NF != 5 { invalid = 1 }
 	END { exit invalid }
 ' "${user_file}" || die "invalid user definition: ${user_file}"
-mapfile -t users < <(
+# A read loop rather than mapfile, which macOS's /bin/bash 3.2 does not have.
+users=()
+while IFS= read -r definition; do
+	users+=("${definition}")
+done < <(
 	awk -F: '
 		/^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
 		{ print }
