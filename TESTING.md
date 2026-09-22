@@ -188,19 +188,17 @@ passes on the QDMI leg.
 
 ## mqt-cc smoke (no credentials)
 
-The image installs the MQT Compiler Collection (`mqt-cc`), Qiskit, and the IQM
-serializer at `/opt/openqse/mqt-cc-venv`. This separate environment allows the
+The image installs the MQT Compiler Collection (`mqt-cc`), Qiskit, and
+`iqm-qdmi` at `/opt/openqse/mqt-cc-venv`. This separate environment allows the
 compiler and QFw to use different Qiskit versions. `do_qfw_build.sh` also installs
 this environment at `/workspace/qfw-container-base/mqt-cc-venv` unless
 `--skip-venv` is used.
 
-`shared-dir/mqt-cc-smoke.sbatch` uses the compiler's Python API to compile a
-Qiskit circuit and OpenQASM source for MQT Core's bundled IQM Garnet hardware
-model. It checks native operations and placements, uses `iqm-qdmi`'s serializer
-to produce IQM JSON, and verifies the compiled circuit's measured outputs with
-local DDSIM. The model is a historical hardware snapshot, not live device
-discovery. This check makes no hardware calls and does not exercise QFw
-submission or QRMI. The image build runs it too.
+`shared-dir/mqt-cc-smoke.sbatch` compiles a Qiskit circuit for MQT Core's bundled
+IQM Garnet model to QIR Base. It uses QDMI to read the model's capabilities and
+run the QIR on local DDSIM. The model is a historical hardware snapshot, not
+live device discovery. This check makes no hardware calls and does not exercise
+QFw submission or QRMI. The image build runs it too.
 
 Test the image installation:
 
@@ -219,7 +217,7 @@ sbatch --wait mqt-cc-smoke.sbatch
 ```
 
 The job uses the `normal` partition and needs no QPU allocation. Success ends
-with `MQT-CC + IQM SERIALIZATION SMOKE: PASS`.
+with `MQT-CC QIR SMOKE: PASS`.
 
 ## What to capture
 
