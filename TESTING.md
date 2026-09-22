@@ -1,8 +1,8 @@
-# Testing the QRMI/QDMI shim (`svc_lib_qpm`)
+# Testing the QRMI/QDMI shim and mqt-cc
 
 This describes how to validate the QFw QRMI/QDMI front-end
-(`services/svc_lib_qpm`) in the containerized Slurm cluster. There are two
-tiers:
+(`services/svc_lib_qpm`) and the MQT Compiler Collection (`mqt-cc`) in the
+containerized Slurm cluster. The shim has two test tiers:
 
 1. **Local smoke:** routing and `qhw` normalization, with no credentials and no
    network access. This is the everyday check.
@@ -10,7 +10,7 @@ tiers:
    QRMI against an IQM system, confirming they return the same `qhw` shape.
    Requires IQM credentials.
 
-The test vehicle is `shared-dir/shim-smoke.sbatch`. It needs no Slurm
+The shim test vehicle is `shared-dir/shim-smoke.sbatch`. It needs no Slurm
 allocation and reads no Slurm environment, so both tiers run it directly inside
 `slurmctld`.
 
@@ -27,7 +27,7 @@ simulators, the image installs QFw at `/opt/openqse/qfw`, and its Python
 environment at `/opt/openqse/qfw-venv`, including the shim's QRMI and QDMI
 dependencies.
 
-## Which installation the smoke tests
+## Which shim installation is tested
 
 The image sets `QFW_PREFIX` and `QFW_VENV` to those paths, and
 `shim-smoke.sbatch` honours both. So **by default the smoke tests the image
@@ -186,12 +186,6 @@ That wording predates the shim supplying the environment itself. Treat it as a
 QRMI failure and read the exception name in the parentheses. The run still
 passes on the QDMI leg.
 
-## What to capture
-
-The full `shim-smoke.out`, in particular the qubit and edge counts from each
-leg, whether the QRMI leg ran or reported unavailable, and whether the
-`cross-library: ... agree` line appeared.
-
 ## mqt-cc smoke (no credentials)
 
 The image installs the MQT Compiler Collection (`mqt-cc`), Qiskit, and the IQM
@@ -225,5 +219,13 @@ sbatch --wait mqt-cc-smoke.sbatch
 ```
 
 The job uses the `normal` partition and needs no QPU allocation. Success ends
-with `MQT-CC + IQM SERIALIZATION SMOKE: PASS`. Capture `mqt-cc-smoke.out` or
-the Slurm job's `mqt-cc-smoke.<job-id>.out`.
+with `MQT-CC + IQM SERIALIZATION SMOKE: PASS`.
+
+## What to capture
+
+The full `shim-smoke.out`, in particular the qubit and edge counts from each
+leg, whether the QRMI leg ran or reported unavailable, and whether the
+`cross-library: ... agree` line appeared.
+
+For the compiler smoke, capture `mqt-cc-smoke.out` or the Slurm job's
+`mqt-cc-smoke.<job-id>.out`.

@@ -28,8 +28,12 @@ import json
 from qiskit import QuantumCircuit, qasm3
 
 from mqt.core.mlir import (
-    CompilerTarget, OutputFormat, PayloadFormat, PayloadSpecification,
-    TargetEnvironment, compile_program,
+    CompilerTarget,
+    OutputFormat,
+    PayloadFormat,
+    PayloadSpecification,
+    TargetEnvironment,
+    compile_program,
 )
 from mqt.core.plugins.qiskit import QDMIBackend, program_serializer
 from mqt.core.qdmi import ProgramFormat
@@ -44,7 +48,8 @@ assert serializer is not None, "iqm-qdmi's IQM JSON serializer is not installed"
 # Base-profile restrictions suffice for this static circuit. Stop at native
 # gates in QCO; the IQM serializer below owns the final payload format.
 environment = TargetEnvironment(
-    target, PayloadSpecification(PayloadFormat("qir", "2.1.0", "base")),
+    target,
+    PayloadSpecification(PayloadFormat("qir", "2.1.0", "base")),
 )
 
 circuit = QuantumCircuit(3, 3)
@@ -75,7 +80,10 @@ for frontend, source in (("Qiskit", circuit), ("OpenQASM", qasm3.dumps(circuit))
     print(f"[mqt-cc-smoke] {frontend} -> mqt-cc -> native IQM JSON: OK")
 
     job = simulator.submit_job(
-        qasm3.dumps(native), ProgramFormat.QASM3, 256, custom1=7,
+        qasm3.dumps(native),
+        ProgramFormat.QASM3,
+        256,
+        custom1=7,
     )
     job.wait()
     counts = job.get_counts()
