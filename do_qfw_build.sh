@@ -17,6 +17,7 @@ the tree being built is your own shared-dir/QFw checkout:
 
   source              \${QFW_BASE}/QFw
   python venv         \${QFW_BASE}/qfw-venv
+  MQT compiler venv   \${QFW_BASE}/mqt-venv
   build tree          \${QFW_BASE}/qfw-build
   install tree        \${QFW_BASE}/qfw-install
 
@@ -187,6 +188,13 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     # dependencies their pyproject.toml declares. qhw-data needs jsonschema for
     # schema validation, which the shim's qhw record building relies on.
     python -m pip install 'jsonschema>=4'
+
+    # Match the image's compiler environment without changing QFw's SDK pins.
+    # iqm-qdmi's published [qiskit] extra still requires MQT Core 3.9.
+    mqt_venv="${QFW_BASE}/mqt-venv"
+    python -m venv "${mqt_venv}"
+    "${mqt_venv}/bin/python" -m pip install \
+        'mqt-core==4.0.0' 'qiskit==2.5.2' 'iqm-qdmi==1.4.0'
 else
     # shellcheck disable=SC1091
     source "${QFW_VENV}/bin/activate"
