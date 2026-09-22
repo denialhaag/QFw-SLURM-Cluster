@@ -230,7 +230,7 @@ ARG QFW_IMAGE_SOURCE=/tmp/qfw-source
 ARG QFW_IMAGE_BUILD=/tmp/qfw-build
 ARG QFW_IMAGE_PREFIX=/opt/openqse/qfw
 ARG QFW_IMAGE_VENV=/opt/openqse/qfw-venv
-ARG MQT_VENV=/opt/openqse/mqt-venv
+ARG MQT_CC_VENV=/opt/openqse/mqt-cc-venv
 ARG QFW_SLURM_SOURCE=/tmp/qfw-slurm-source
 ARG QFW_SLURM_BUILD=/tmp/qfw-slurm-build
 ARG QFW_SLURM_PREFIX=/opt/openqse/qfw-slurm
@@ -422,16 +422,15 @@ RUN set -ex \
     && rm -rf "${QFW_IMAGE_SOURCE}" "${QFW_IMAGE_BUILD}" \
         "${SIMULATOR_WORK_ROOT}"
 
-# The compiler's native Qiskit adapter uses 2.5.x; keep it independent of
-# QFw's SDK pins. Wheels include LLVM/MLIR. Keep do_qfw_build.sh in step.
-# Use base iqm-qdmi: its published [qiskit] extra still requires MQT Core 3.9.
-COPY shared-dir/mqt-smoke.sbatch /tmp/mqt-smoke.sbatch
+# mqt-cc needs Qiskit 2.5.x, independently of QFw's SDK pins.
+# iqm-qdmi 1.4.0's [qiskit] extra requires MQT Core 3.9.
+COPY shared-dir/mqt-cc-smoke.sbatch /tmp/mqt-cc-smoke.sbatch
 RUN set -ex \
-    && python3 -m venv "${MQT_VENV}" \
-    && "${MQT_VENV}/bin/python" -m pip install \
+    && python3 -m venv "${MQT_CC_VENV}" \
+    && "${MQT_CC_VENV}/bin/python" -m pip install \
         'mqt-core==4.0.0' 'qiskit==2.5.2' 'iqm-qdmi==1.4.0' \
-    && MQT_VENV="${MQT_VENV}" bash /tmp/mqt-smoke.sbatch \
-    && rm /tmp/mqt-smoke.sbatch
+    && MQT_CC_VENV="${MQT_CC_VENV}" bash /tmp/mqt-cc-smoke.sbatch \
+    && rm /tmp/mqt-cc-smoke.sbatch
 
 ARG QFW_SLURM_SOURCE_REVISION
 RUN set -ex \
@@ -484,7 +483,7 @@ ENV QFW_IMAGE_PREFIX=${QFW_IMAGE_PREFIX} \
     QFW_IMAGE_VENV=${QFW_IMAGE_VENV} \
     QFW_PREFIX=${QFW_IMAGE_PREFIX} \
     QFW_VENV=${QFW_IMAGE_VENV} \
-    MQT_VENV=${MQT_VENV} \
+    MQT_CC_VENV=${MQT_CC_VENV} \
     QFW_SLURM_PREFIX=${QFW_SLURM_PREFIX} \
     NWQSIM_PREFIX=${NWQSIM_PREFIX} \
     TNQVM_PREFIX=${TNQVM_PREFIX} \

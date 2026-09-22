@@ -192,37 +192,38 @@ The full `shim-smoke.out`, in particular the qubit and edge counts from each
 leg, whether the QRMI leg ran or reported unavailable, and whether the
 `cross-library: ... agree` line appeared.
 
-## MQT compiler smoke (no credentials)
+## mqt-cc smoke (no credentials)
 
-The image installs MQT Core 4, Qiskit 2.5, and the IQM serializer in a separate
-environment at `/opt/openqse/mqt-venv`. This keeps the compiler's native Qiskit
-adapter independent of QFw's SDK versions. The wheels include LLVM/MLIR; no
-compiler source build is needed. `do_qfw_build.sh` also installs this environment
-at `/workspace/qfw-container-base/mqt-venv` unless `--skip-venv` is used.
+The image installs the MQT Compiler Collection (`mqt-cc`), Qiskit, and the IQM
+serializer at `/opt/openqse/mqt-cc-venv`. This separate environment allows the
+compiler and QFw to use different Qiskit versions. `do_qfw_build.sh` also installs
+this environment at `/workspace/qfw-container-base/mqt-cc-venv` unless
+`--skip-venv` is used.
 
-`shared-dir/mqt-smoke.sbatch` compiles both a Qiskit circuit and OpenQASM source
-for MQT's bundled IQM Garnet hardware model. It checks native operations and
-placements, uses `iqm-qdmi`'s serializer to produce IQM JSON, and verifies the
-compiled circuit's measured outputs with local DDSIM. The model is a historical
-hardware snapshot, not live device discovery. This check makes no hardware calls
-and does not exercise QFw submission or QRMI. The image build runs it too.
+`shared-dir/mqt-cc-smoke.sbatch` uses the compiler's Python API to compile a
+Qiskit circuit and OpenQASM source for MQT Core's bundled IQM Garnet hardware
+model. It checks native operations and placements, uses `iqm-qdmi`'s serializer
+to produce IQM JSON, and verifies the compiled circuit's measured outputs with
+local DDSIM. The model is a historical hardware snapshot, not live device
+discovery. This check makes no hardware calls and does not exercise QFw
+submission or QRMI. The image build runs it too.
 
 Test the image installation:
 
 ```bash
 docker exec -w /workspace/qfw-container-base slurmctld \
-  bash mqt-smoke.sbatch 2>&1 | tee shared-dir/mqt-smoke.out
+  bash mqt-cc-smoke.sbatch 2>&1 | tee shared-dir/mqt-cc-smoke.out
 ```
 
 For the developer environment, add
-`-e MQT_VENV=/workspace/qfw-container-base/mqt-venv` to `docker exec`.
+`-e MQT_CC_VENV=/workspace/qfw-container-base/mqt-cc-venv` to `docker exec`.
 To test on a Slurm application node, submit from inside `slurmctld`:
 
 ```bash
 cd /workspace/qfw-container-base
-sbatch --wait mqt-smoke.sbatch
+sbatch --wait mqt-cc-smoke.sbatch
 ```
 
 The job uses the `normal` partition and needs no QPU allocation. Success ends
-with `MQT COMPILER + IQM SERIALIZATION SMOKE: PASS`. Capture `mqt-smoke.out` or
-the Slurm job's `mqt-smoke.<job-id>.out`.
+with `MQT-CC + IQM SERIALIZATION SMOKE: PASS`. Capture `mqt-cc-smoke.out` or
+the Slurm job's `mqt-cc-smoke.<job-id>.out`.

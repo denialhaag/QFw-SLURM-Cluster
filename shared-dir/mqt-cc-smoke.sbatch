@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH --job-name=mqt-smoke
-#SBATCH --output=mqt-smoke.%J.out
+#SBATCH --job-name=mqt-cc-smoke
+#SBATCH --output=mqt-cc-smoke.%J.out
 #SBATCH --time=00:05:00
 #SBATCH --partition=normal
 #SBATCH --nodes=1
@@ -14,15 +14,15 @@
 
 set -euo pipefail
 
-MQT_VENV="${MQT_VENV:-/opt/openqse/mqt-venv}"
-if [ ! -x "${MQT_VENV}/bin/python" ]; then
-    echo "No MQT compiler environment at ${MQT_VENV}. Build the image or run ./do_qfw_build.sh." >&2
+MQT_CC_VENV="${MQT_CC_VENV:-/opt/openqse/mqt-cc-venv}"
+if [ ! -x "${MQT_CC_VENV}/bin/python" ]; then
+    echo "No mqt-cc environment at ${MQT_CC_VENV}. Build the image or run ./do_qfw_build.sh." >&2
     exit 1
 fi
 
-echo "[$(date)] mqt-smoke on $(hostname)"
+echo "[$(date)] mqt-cc-smoke on $(hostname)"
 
-"${MQT_VENV}/bin/python" - <<'PY'
+"${MQT_CC_VENV}/bin/python" - <<'PY'
 import json
 
 from qiskit import QuantumCircuit, qasm3
@@ -72,7 +72,7 @@ for frontend, source in (("Qiskit", circuit), ("OpenQASM", qasm3.dumps(circuit))
     assert {op["name"] for op in payload["instructions"]} == {"prx", "cz", "measure"}
     site_names = {site.name() for site in model.sites()}
     assert all(set(op["locus"]) <= site_names for op in payload["instructions"])
-    print(f"[mqt-smoke] {frontend} -> MQT -> native IQM JSON: OK")
+    print(f"[mqt-cc-smoke] {frontend} -> mqt-cc -> native IQM JSON: OK")
 
     job = simulator.submit_job(
         qasm3.dumps(native), ProgramFormat.QASM3, 256, custom1=7,
@@ -81,7 +81,7 @@ for frontend, source in (("Qiskit", circuit), ("OpenQASM", qasm3.dumps(circuit))
     counts = job.get_counts()
     assert sum(counts.values()) == 256, counts
     assert set(counts) == {"100", "111"}, counts
-    print(f"[mqt-smoke] {frontend} compiled circuit -> local DDSIM: {counts}")
+    print(f"[mqt-cc-smoke] {frontend} compiled circuit -> local DDSIM: {counts}")
 
-print("MQT COMPILER + IQM SERIALIZATION SMOKE: PASS")
+print("MQT-CC + IQM SERIALIZATION SMOKE: PASS")
 PY
