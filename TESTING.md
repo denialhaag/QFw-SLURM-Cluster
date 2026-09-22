@@ -38,14 +38,18 @@ and point the run at it, as described next.
 
 ## Optional: a developer override
 
-Clone QFw onto the shared mount and build it inside the running cluster:
+Clone QFw and MQT Core onto the shared mount and build them inside the running
+cluster:
 
 ```bash
 git clone --recursive https://github.com/openQSE/QFw.git shared-dir/QFw
+git clone https://github.com/munich-quantum-toolkit/core.git shared-dir/mqt-core
 ./do_qfw_build.sh
 ```
 
 `--recursive` is required, because the shim needs DEFw and the `qhw-*` packages.
+Check out the desired MQT Core ref before running `do_qfw_build.sh`. The image
+provides the MLIR toolchain used to build its Python package.
 QFw declares its submodules over SSH, so without GitHub SSH access to openQSE,
 rewrite them to HTTPS before cloning:
 
@@ -188,11 +192,11 @@ passes on the QDMI leg.
 
 ## mqt-cc smoke (no credentials)
 
-The image installs the MQT Compiler Collection (`mqt-cc`), Qiskit, and
-`iqm-qdmi` at `/opt/openqse/mqt-cc-venv`. This separate environment allows the
-compiler and QFw to use different Qiskit versions. `do_qfw_build.sh` also installs
-this environment at `/workspace/qfw-container-base/mqt-cc-venv` unless
-`--skip-venv` is used.
+The image builds MQT Core from the ref selected by `do_configure.sh` and installs
+it with Qiskit and `iqm-qdmi` at `/opt/openqse/mqt-cc-venv`. This separate
+environment allows the compiler and QFw to use different Qiskit versions.
+`do_qfw_build.sh` builds the mounted MQT Core checkout into
+`/workspace/qfw-container-base/mqt-cc-venv` unless `--skip-venv` is used.
 
 `shared-dir/mqt-cc-smoke.sbatch` compiles a Qiskit circuit for MQT Core's bundled
 IQM Garnet model to QIR Base. It uses QDMI to read the model's capabilities and

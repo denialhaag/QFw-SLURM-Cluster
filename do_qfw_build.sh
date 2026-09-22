@@ -8,14 +8,15 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [--jobs N] [--clean] [--skip-venv] [--container NAME]
 
-Build and install a QFw + DEFw developer override inside the running cluster,
-out of the shared mount. The cluster image's official installation remains
-unchanged.
+Build and install QFw + DEFw and MQT Core developer overrides inside the
+running cluster from checkouts on the shared mount. The cluster image's official
+installation remains unchanged.
 
 Everything lands on the shared mount, so every node sees the same install and
 the tree being built is your own shared-dir/QFw checkout:
 
   source              \${QFW_BASE}/QFw
+  mqt-core source     \${QFW_BASE}/mqt-core
   python venv         \${QFW_BASE}/qfw-venv
   mqt-cc venv         \${QFW_BASE}/mqt-cc-venv
   build tree          \${QFW_BASE}/qfw-build
@@ -26,8 +27,8 @@ Activate the result inside a container with:
   source \${QFW_PREFIX}/bin/qfw-activate --venv \${QFW_VENV}
 
 Options:
-  --jobs N          Parallel build jobs (default: nproc in the container)
-  --clean           Remove the build and install trees first
+  --jobs N          Parallel build jobs (QFw default: nproc; MQT Core: 4)
+  --clean           Remove the QFw build and install trees first
   --skip-venv       Reuse the existing venv, skip all pip installs
   --container NAME  Container to build in (default: slurmctld)
   -h, --help        Show this help
@@ -82,6 +83,8 @@ set -euo pipefail
 
 QFW_BASE="${QFW_BASE:-/workspace/qfw-container-base}"
 QFW_SRC="${QFW_SRC:-${QFW_DEV_SRC:-${QFW_BASE}/QFw}}"
+MQT_CORE_SRC="${QFW_BASE}/mqt-core"
+MQT_CC_MLIR_DIR="${MQT_CC_MLIR_DIR:-/opt/llvm-23.1.1/lib/cmake/mlir}"
 QFW_VENV="${QFW_VENV:-${QFW_DEV_VENV:-${QFW_BASE}/qfw-venv}}"
 QFW_BUILD="${QFW_BUILD:-${QFW_DEV_BUILD:-${QFW_BASE}/qfw-build}}"
 QFW_PREFIX="${QFW_PREFIX:-${QFW_DEV_PREFIX:-${QFW_BASE}/qfw-install}}"
@@ -126,6 +129,19 @@ if [ ! -f "${QFW_SRC}/CMakeLists.txt" ]; then
     echo "Check what the checkout is on with:" >&2
     echo "    git -C ${QFW_HOST_BASE}/QFw log --oneline -1" >&2
     exit 1
+fi
+
+if [ "${QFW_SKIP_VENV}" != "true" ]; then
+    if [ ! -f "${MQT_CORE_SRC}/pyproject.toml" ]; then
+        echo "No MQT Core checkout at ${MQT_CORE_SRC}." >&2
+        echo "Clone it onto the shared mount from the host:" >&2
+        echo "    git clone https://github.com/munich-quantum-toolkit/core.git ${QFW_HOST_BASE}/mqt-core" >&2
+        exit 1
+    fi
+    if [ ! -f "${MQT_CC_MLIR_DIR}/MLIRConfig.cmake" ]; then
+        echo "No MLIR installation at ${MQT_CC_MLIR_DIR}. Rebuild the cluster image first." >&2
+        exit 1
+    fi
 fi
 
 if [ "${QFW_DO_CLEAN}" = "true" ]; then
@@ -189,12 +205,14 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     # schema validation, which the shim's qhw record building relies on.
     python -m pip install 'jsonschema>=4'
 
-    # Install mqt-cc separately from QFw's SDK dependencies.
-    # iqm-qdmi 1.4.0's [qiskit] extra requires MQT Core 3.9.
+    # Build mqt-cc from the mounted checkout, apart from QFw's SDK dependencies.
     mqt_cc_venv="${QFW_BASE}/mqt-cc-venv"
     python -m venv "${mqt_cc_venv}"
-    "${mqt_cc_venv}/bin/python" -m pip install \
-        'mqt-core==4.0.0' 'qiskit==2.5.2' 'iqm-qdmi==1.4.0'
+    "${mqt_cc_venv}/bin/python" -m pip install --upgrade pip
+    MLIR_DIR="${MQT_CC_MLIR_DIR}" \
+        CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS_OVERRIDE:-4}" \
+        "${mqt_cc_venv}/bin/python" -m pip install \
+        "${MQT_CORE_SRC}" 'qiskit==2.5.2' 'iqm-qdmi==1.4.0'
 else
     # shellcheck disable=SC1091
     source "${QFW_VENV}/bin/activate"

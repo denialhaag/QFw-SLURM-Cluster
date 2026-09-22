@@ -62,9 +62,11 @@ git switch release/v0.1
 ./do_build.sh
 ```
 
-The cluster branch controls this repository's files. The QFw and qfw-slurm
-sources installed into the image come from the refs passed to `do_configure.sh`,
-so release builds should pass matching release tags explicitly.
+The cluster branch controls this repository's files. The QFw, qfw-slurm, and
+MQT Core sources installed into the image come from the refs passed to
+`do_configure.sh`. Use `--mqt-core-ref` to select a branch or commit with the
+compiler features you need. Release builds should pass matching QFw and
+qfw-slurm release tags explicitly.
 
 If `--prefix` is omitted, `do_configure.sh` creates and uses:
 
@@ -248,14 +250,16 @@ Create development directories only as needed. A typical layout is:
 ```text
 shared-dir/
   QFw/          # optional active QFw checkout
+  mqt-core/     # optional active MQT Core checkout
   qfw-venv/     # optional Python venv created inside the container
+  mqt-cc-venv/  # optional compiler Python venv created inside the container
   qfw-build/    # optional QFw build tree
   qfw-install/  # optional QFw install tree
   benchmarks/   # optional benchmark outputs
   rocm/         # optional ROCm prefix for ROCm/HIP builds
 ```
 
-1. Configure the host mount and clone [QFw]:
+1. Configure the host mount and clone [QFw] and MQT Core:
 
 ```bash
 QFW_CONTAINER_BASE=/path/to/shared-dir
@@ -264,6 +268,8 @@ QFW_CONTAINER_BASE=/path/to/shared-dir
 
 git clone --recursive git@github.com:openQSE/QFw.git \
   "${QFW_CONTAINER_BASE}/QFw"
+git clone https://github.com/munich-quantum-toolkit/core.git \
+  "${QFW_CONTAINER_BASE}/mqt-core"
 ```
 
 2. Start the cluster, then build the shared override from the host:

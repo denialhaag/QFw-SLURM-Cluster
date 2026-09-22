@@ -224,6 +224,8 @@ ARG QFW_BUILD_JOBS=4
 ARG QFW_REPOSITORY=https://github.com/openQSE/QFw.git
 ARG QFW_REF=main
 ARG QFW_DEFW_REPOSITORY=
+ARG MQT_CORE_REPOSITORY=https://github.com/munich-quantum-toolkit/core.git
+ARG MQT_CORE_REF=151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6
 ARG QFW_SLURM_REPOSITORY=https://github.com/openQSE/qfw-slurm.git
 ARG QFW_SLURM_REF=main
 ARG QFW_IMAGE_SOURCE=/tmp/qfw-source
@@ -231,6 +233,7 @@ ARG QFW_IMAGE_BUILD=/tmp/qfw-build
 ARG QFW_IMAGE_PREFIX=/opt/openqse/qfw
 ARG QFW_IMAGE_VENV=/opt/openqse/qfw-venv
 ARG MQT_CC_VENV=/opt/openqse/mqt-cc-venv
+ARG MQT_CORE_SOURCE=/tmp/mqt-core-source
 ARG QFW_SLURM_SOURCE=/tmp/qfw-slurm-source
 ARG QFW_SLURM_BUILD=/tmp/qfw-slurm-build
 ARG QFW_SLURM_PREFIX=/opt/openqse/qfw-slurm
@@ -422,13 +425,36 @@ RUN set -ex \
     && rm -rf "${QFW_IMAGE_SOURCE}" "${QFW_IMAGE_BUILD}" \
         "${SIMULATOR_WORK_ROOT}"
 
-# mqt-cc needs Qiskit 2.5.x, independently of QFw's SDK pins.
-# iqm-qdmi 1.4.0's [qiskit] extra requires MQT Core 3.9.
+# Build MQT Core from source for compiler features beyond the released wheel.
+# The separate environment keeps Qiskit 2.5.x apart from QFw's SDK pins.
+ARG MQT_CC_MLIR_VERSION=23.1.1
+ARG MQT_CC_MLIR_PREFIX=/opt/llvm-23.1.1
+ENV MQT_CC_MLIR_DIR=${MQT_CC_MLIR_PREFIX}/lib/cmake/mlir
+RUN set -ex \
+    && curl -LsSf \
+        https://github.com/munich-quantum-software/setup-mlir/releases/download/v1.4.2/setup-mlir.sh \
+        -o /tmp/setup-mlir.sh \
+    && bash /tmp/setup-mlir.sh -v "${MQT_CC_MLIR_VERSION}" -p "${MQT_CC_MLIR_PREFIX}" \
+    && test -f "${MQT_CC_MLIR_DIR}/MLIRConfig.cmake" \
+    && rm /tmp/setup-mlir.sh
+
+ARG MQT_CORE_SOURCE_REVISION
+RUN set -ex \
+    && git clone "${MQT_CORE_REPOSITORY}" "${MQT_CORE_SOURCE}" \
+    && git -C "${MQT_CORE_SOURCE}" fetch origin "${MQT_CORE_REF}" \
+    && git -C "${MQT_CORE_SOURCE}" switch --detach FETCH_HEAD \
+    && test "$(git -C "${MQT_CORE_SOURCE}" rev-parse HEAD)" = \
+        "${MQT_CORE_SOURCE_REVISION}" \
+    && python3 -m venv "${MQT_CC_VENV}" \
+    && "${MQT_CC_VENV}/bin/python" -m pip install --upgrade pip \
+    && MLIR_DIR="${MQT_CC_MLIR_DIR}" \
+        CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
+        "${MQT_CC_VENV}/bin/python" -m pip install \
+        "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' 'iqm-qdmi==1.4.0' \
+    && rm -rf "${MQT_CORE_SOURCE}"
+
 COPY shared-dir/mqt-cc-smoke.sbatch /tmp/mqt-cc-smoke.sbatch
 RUN set -ex \
-    && python3 -m venv "${MQT_CC_VENV}" \
-    && "${MQT_CC_VENV}/bin/python" -m pip install \
-        'mqt-core==4.0.0' 'qiskit==2.5.2' 'iqm-qdmi==1.4.0' \
     && MQT_CC_VENV="${MQT_CC_VENV}" bash /tmp/mqt-cc-smoke.sbatch \
     && rm /tmp/mqt-cc-smoke.sbatch
 
