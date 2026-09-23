@@ -82,12 +82,12 @@ docker exec -i \
 set -euo pipefail
 
 QFW_BASE="${QFW_BASE:-/workspace/qfw-container-base}"
-QFW_SRC="${QFW_SRC:-${QFW_DEV_SRC:-${QFW_BASE}/QFw}}"
+QFW_SRC="${QFW_DEV_SRC:-${QFW_BASE}/QFw}"
 MQT_CORE_SRC="${QFW_BASE}/mqt-core"
 export MLIR_DIR="${MLIR_DIR:-/opt/llvm-23.1.1/lib/cmake/mlir}"
-QFW_VENV="${QFW_VENV:-${QFW_DEV_VENV:-${QFW_BASE}/qfw-venv}}"
-QFW_BUILD="${QFW_BUILD:-${QFW_DEV_BUILD:-${QFW_BASE}/qfw-build}}"
-QFW_PREFIX="${QFW_PREFIX:-${QFW_DEV_PREFIX:-${QFW_BASE}/qfw-install}}"
+QFW_VENV="${QFW_DEV_VENV:-${QFW_BASE}/qfw-venv}"
+QFW_BUILD="${QFW_DEV_BUILD:-${QFW_BASE}/qfw-build}"
+QFW_PREFIX="${QFW_DEV_PREFIX:-${QFW_BASE}/qfw-install}"
 QFW_HOST_BASE="${QFW_HOST_BASE:-shared-dir}"
 QFW_CONTAINER_NAME="${QFW_CONTAINER_NAME:-slurmctld}"
 
@@ -158,9 +158,7 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     uv pip install -r "${QFW_SRC}/setup/build-requirements.txt"
     uv pip install -r "${QFW_SRC}/setup/requirements.txt"
 
-    # Shim dependencies. These used to be baked into the image venv. The C ABI
-    # in ${QRMI_PREFIX}/lib is built at image build time, so the bindings are
-    # pinned to the same QRMI_VERSION the image exported.
+    # Match the QRMI bindings to the C library built into the image.
     qrmi_pin="${QRMI_VERSION:-${QFW_VERSION_FALLBACK:-}}"
     if [ -n "${qrmi_pin}" ]; then
         echo "== qrmi bindings pinned to ${qrmi_pin}"
@@ -169,34 +167,11 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
         echo "No QRMI version pin available; installing unpinned qrmi" >&2
         uv pip install qrmi
     fi
-    # QDMI-on-IQM. The base package is all the shim needs: it carries the IQM
-    # device library plus the stable device ID and prefix the QDMI driver
-    # registers it under. The [qiskit] extra is still deliberately NOT
-    # installed: it only buys MQT Core's Qiskit adapter (iqm.qdmi.qiskit),
-    # which the shim does not import, and Qiskit itself already comes from
-    # QFw's setup/requirements.txt.
-    #
-    # The floor is 1.4, which is where the device library serves the QDMI queue
-    # properties and moves to QDMI 1.3.3. That last part matters more than it
-    # looks: 1.3.0 built against QDMI 1.3.2, one patch release behind the 1.3.3
-    # that mqt-core 3.9 uses, and a property added in 1.3.3 came back from the
-    # older library as INVALIDARGUMENT rather than NOTSUPPORTED. Matching the
-    # two sides removes that whole class of confusion.
+    # The QFw driver needs the IQM device library, ID, and prefix. Version 1.4
+    # also provides the queue properties used with QDMI 1.3.3.
     uv pip install 'iqm-qdmi>=1.4'
 
-    # mqt-core 3.8.0 replaced fomac.add_dynamic_device_library with
-    # register_device/open_device, and 3.9.0 moved the Python module from
-    # mqt.core.fomac to mqt.core.qdmi (the old name still works but warns).
-    # services/svc_lib_qpm/drivers/qdmi_driver.py calls the 3.9 API.
-    #
-    # 3.9.2 rather than 3.9.0 keeps this in step with iqm-qdmi 1.4.0. The two
-    # projects handed the IQM JSON conversion across in a matched pair: mqt-core
-    # 3.9.1 removed qiskit_to_iqm_json and iqm-qdmi 1.4.0 took it over. QFw uses
-    # neither side of that converter, so the pairing does not gate us, but
-    # running one half of a handoff against the other half's predecessor is not
-    # a state worth being in. iqm-qdmi 1.4.0's own [qiskit] extra now asks for
-    # mqt-core ~=3.9.1, so this also keeps that extra restorable if it is ever
-    # wanted. Installed after iqm-qdmi so this pin wins over what that resolves.
+    # The QFw driver imports mqt.core.qdmi.driver, available since 3.9.
     uv pip install 'mqt-core==3.9.2'
 
     # The bundled QHW packages (qhw-data, qhw-iqm, qhw-admission, qhw-scheduler)

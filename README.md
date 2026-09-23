@@ -727,9 +727,9 @@ If [Slurm] config changes are not visible inside the running containers:
 If the mounted developer venvs came from an older image:
 
 ```bash
-./do_ssh.sh
-rm -rf /workspace/qfw-container-base/qfw-venv /workspace/qfw-container-base/mqt-cc-venv
-exit
+docker exec slurmctld rm -rf \
+  /workspace/qfw-container-base/qfw-venv \
+  /workspace/qfw-container-base/mqt-cc-venv
 ./do_qfw_build.sh
 ```
 

@@ -390,17 +390,9 @@ RUN set -ex \
     && test -x "${TNQVM_PREFIX}/bin/circuit_runner.tnqvm" \
     && test -f "${TNQVM_PREFIX}/xacc/plugins/libtnqvm.so"
 
-# The shim's QRMI/QDMI dependencies. Keep these in step with do_qfw_build.sh,
-# which installs the same packages for the developer build. The two lists
-# drifted once already, and the image kept building without error while its
-# QDMI leg could not import.
-#
-# mqt-core 3.9.2: services/svc_lib_qpm/drivers/qdmi_driver.py imports
-# mqt.core.qdmi.driver, which does not exist before 3.9.
-#
-# iqm-qdmi>=1.4 without the [qiskit] extra, as do_qfw_build.sh does. The shim
-# never imports iqm.qdmi.qiskit, and Qiskit already comes from
-# setup/requirements.txt.
+# Keep the QFw shim's Python dependencies aligned with do_qfw_build.sh.
+# Its QDMI driver needs mqt.core.qdmi.driver and the IQM device library;
+# setup/requirements.txt supplies Qiskit.
 RUN set -ex \
     && uv venv --python python3 "${QFW_IMAGE_VENV}" \
     && uv pip install --python "${QFW_IMAGE_VENV}/bin/python" --upgrade \
