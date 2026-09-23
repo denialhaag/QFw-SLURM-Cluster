@@ -449,7 +449,7 @@ RUN set -ex \
     && "${MQT_CC_VENV}/bin/python" -m pip install --upgrade pip \
     && CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
         "${MQT_CC_VENV}/bin/python" -m pip install \
-        "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' 'iqm-qdmi==1.4.0' \
+        "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' \
     && rm -rf "${MQT_CORE_SOURCE}"
 
 COPY shared-dir/mqt-cc-smoke.sbatch /tmp/mqt-cc-smoke.sbatch

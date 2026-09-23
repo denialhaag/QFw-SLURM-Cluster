@@ -211,7 +211,7 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     "${mqt_cc_venv}/bin/python" -m pip install --upgrade pip
     CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS_OVERRIDE:-4}" \
         "${mqt_cc_venv}/bin/python" -m pip install \
-        "${MQT_CORE_SRC}" 'qiskit==2.5.2' 'iqm-qdmi==1.4.0'
+        "${MQT_CORE_SRC}" 'qiskit==2.5.2'
 else
     # shellcheck disable=SC1091
     source "${QFW_VENV}/bin/activate"

@@ -193,7 +193,7 @@ passes on the QDMI leg.
 ## `mqt-cc` smoke test (no credentials)
 
 The image builds MQT Core from the ref selected by `do_configure.sh` and installs
-it with Qiskit and `iqm-qdmi` at `/opt/openqse/mqt-cc-venv`. This separate
+it with Qiskit at `/opt/openqse/mqt-cc-venv`. This separate
 environment allows the compiler and QFw to use different Qiskit versions.
 `do_qfw_build.sh` builds the mounted MQT Core checkout into
 `/workspace/qfw-container-base/mqt-cc-venv` unless `--skip-venv` is used.

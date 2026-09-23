@@ -398,7 +398,7 @@ The image builds and installs:
 - [QRMI] runtime: `libqrmi.so` and `qrmi.h` under `/opt/qfw/qrmi/`, the `qrmi`
   Python wheel installed into the [QFw] venv, and the SLURM SPANK plugin
   installed into `/usr/lib64/slurm/`
-- [QDMI] runtime: IQM's `iqm-qdmi[qiskit]` wheel installed into the [QFw]
+- [QDMI] runtime: IQM's `iqm-qdmi` wheel installed into the [QFw]
   venv
 
 The image-level runtime environment includes:
