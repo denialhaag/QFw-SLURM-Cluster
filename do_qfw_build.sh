@@ -27,7 +27,7 @@ Activate the result inside a container with:
   source \${QFW_PREFIX}/bin/qfw-activate --venv \${QFW_VENV}
 
 Options:
-  --jobs N          Parallel build jobs (QFw default: nproc; MQT Core: 4)
+  --jobs N          Parallel build jobs (default: nproc in the container)
   --clean           Remove the QFw build and install trees first
   --skip-venv       Reuse the existing venv, skip Python installs
   --container NAME  Container to build in (default: slurmctld)
@@ -184,7 +184,7 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     mqt_cc_venv="${QFW_BASE}/mqt-cc-venv"
     [ -d "${mqt_cc_venv}" ] || uv venv --python python3 "${mqt_cc_venv}"
     uv pip install --python "${mqt_cc_venv}" --upgrade pip
-    CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS_OVERRIDE:-4}" \
+    CMAKE_BUILD_PARALLEL_LEVEL="${jobs}" \
         uv pip install --python "${mqt_cc_venv}" \
         "${MQT_CORE_SRC}" 'qiskit==2.5.2'
 else
