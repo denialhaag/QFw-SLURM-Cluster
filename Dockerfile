@@ -79,7 +79,8 @@ RUN set -ex \
     && dnf clean all \
     && rm -rf /var/cache/yum
 
-RUN pip3 install Cython pytest
+COPY --from=ghcr.io/astral-sh/uv:0.12.17 /uv /uvx /usr/local/bin/
+RUN uv pip install --system Cython pytest
 
 ARG HTTP_PARSER_VERSION=v2.9.4
 ARG HTTP_PARSER_PREFIX=/opt/qfw/http-parser
@@ -399,13 +400,12 @@ RUN set -ex \
 #
 # iqm-qdmi>=1.4 without the [qiskit] extra, as do_qfw_build.sh does. The shim
 # never imports iqm.qdmi.qiskit, and Qiskit already comes from
-# setup/requirements.txt. Combined with an older mqt-core pin, that extra is
-# also what let pip settle on iqm-qdmi 1.2.0.
+# setup/requirements.txt.
 RUN set -ex \
-    && python3 -m venv "${QFW_IMAGE_VENV}" \
-    && "${QFW_IMAGE_VENV}/bin/python" -m pip install --upgrade \
+    && uv venv --python python3 "${QFW_IMAGE_VENV}" \
+    && uv pip install --python "${QFW_IMAGE_VENV}/bin/python" --upgrade \
         pip setuptools wheel \
-    && "${QFW_IMAGE_VENV}/bin/python" -m pip install \
+    && uv pip install --python "${QFW_IMAGE_VENV}/bin/python" \
         -r "${QFW_IMAGE_SOURCE}/setup/build-requirements.txt" \
         -r "${QFW_IMAGE_SOURCE}/setup/requirements.txt" \
         "qrmi==${QRMI_VERSION}" \
@@ -445,10 +445,10 @@ RUN set -ex \
     && git -C "${MQT_CORE_SOURCE}" switch --detach FETCH_HEAD \
     && test "$(git -C "${MQT_CORE_SOURCE}" rev-parse HEAD)" = \
         "${MQT_CORE_SOURCE_REVISION}" \
-    && python3 -m venv "${MQT_CC_VENV}" \
-    && "${MQT_CC_VENV}/bin/python" -m pip install --upgrade pip \
+    && uv venv --python python3 "${MQT_CC_VENV}" \
+    && uv pip install --python "${MQT_CC_VENV}/bin/python" --upgrade pip \
     && CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
-        "${MQT_CC_VENV}/bin/python" -m pip install \
+        uv pip install --python "${MQT_CC_VENV}/bin/python" \
         "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' \
     && rm -rf "${MQT_CORE_SOURCE}"
 
@@ -464,7 +464,7 @@ RUN set -ex \
     && git -C "${QFW_SLURM_SOURCE}" switch --detach FETCH_HEAD \
     && test "$(git -C "${QFW_SLURM_SOURCE}" rev-parse HEAD)" = \
         "${QFW_SLURM_SOURCE_REVISION}" \
-    && "${QFW_IMAGE_VENV}/bin/python" -m pip install \
+    && uv pip install --python "${QFW_IMAGE_VENV}/bin/python" \
         --no-build-isolation "${QFW_SLURM_SOURCE}" pytest \
     && cmake -S "${QFW_SLURM_SOURCE}" -B "${QFW_SLURM_BUILD}" \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \

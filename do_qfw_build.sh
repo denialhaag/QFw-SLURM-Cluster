@@ -29,7 +29,7 @@ Activate the result inside a container with:
 Options:
   --jobs N          Parallel build jobs (QFw default: nproc; MQT Core: 4)
   --clean           Remove the QFw build and install trees first
-  --skip-venv       Reuse the existing venv, skip all pip installs
+  --skip-venv       Reuse the existing venv, skip Python installs
   --container NAME  Container to build in (default: slurmctld)
   -h, --help        Show this help
 EOF
@@ -151,12 +151,12 @@ fi
 
 if [ "${QFW_SKIP_VENV}" != "true" ]; then
     echo "== python venv: ${QFW_VENV}"
-    [ -d "${QFW_VENV}" ] || python3 -m venv "${QFW_VENV}"
+    [ -d "${QFW_VENV}" ] || uv venv --python python3 "${QFW_VENV}"
     # shellcheck disable=SC1091
     source "${QFW_VENV}/bin/activate"
-    python -m pip install --upgrade pip setuptools wheel
-    python -m pip install -r "${QFW_SRC}/setup/build-requirements.txt"
-    python -m pip install -r "${QFW_SRC}/setup/requirements.txt"
+    uv pip install --upgrade pip setuptools wheel
+    uv pip install -r "${QFW_SRC}/setup/build-requirements.txt"
+    uv pip install -r "${QFW_SRC}/setup/requirements.txt"
 
     # Shim dependencies. These used to be baked into the image venv. The C ABI
     # in ${QRMI_PREFIX}/lib is built at image build time, so the bindings are
@@ -164,10 +164,10 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     qrmi_pin="${QRMI_VERSION:-${QFW_VERSION_FALLBACK:-}}"
     if [ -n "${qrmi_pin}" ]; then
         echo "== qrmi bindings pinned to ${qrmi_pin}"
-        python -m pip install "qrmi==${qrmi_pin}"
+        uv pip install "qrmi==${qrmi_pin}"
     else
         echo "No QRMI version pin available; installing unpinned qrmi" >&2
-        python -m pip install qrmi
+        uv pip install qrmi
     fi
     # QDMI-on-IQM. The base package is all the shim needs: it carries the IQM
     # device library plus the stable device ID and prefix the QDMI driver
@@ -182,7 +182,7 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     # that mqt-core 3.9 uses, and a property added in 1.3.3 came back from the
     # older library as INVALIDARGUMENT rather than NOTSUPPORTED. Matching the
     # two sides removes that whole class of confusion.
-    python -m pip install 'iqm-qdmi>=1.4'
+    uv pip install 'iqm-qdmi>=1.4'
 
     # mqt-core 3.8.0 replaced fomac.add_dynamic_device_library with
     # register_device/open_device, and 3.9.0 moved the Python module from
@@ -197,20 +197,20 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     # a state worth being in. iqm-qdmi 1.4.0's own [qiskit] extra now asks for
     # mqt-core ~=3.9.1, so this also keeps that extra restorable if it is ever
     # wanted. Installed after iqm-qdmi so this pin wins over what that resolves.
-    python -m pip install 'mqt-core==3.9.2'
+    uv pip install 'mqt-core==3.9.2'
 
     # The bundled QHW packages (qhw-data, qhw-iqm, qhw-admission, qhw-scheduler)
-    # are installed into site-packages by file copy, so pip never resolves the
-    # dependencies their pyproject.toml declares. qhw-data needs jsonschema for
+    # are installed into site-packages by file copy, so their declared
+    # dependencies are not resolved. qhw-data needs jsonschema for
     # schema validation, which the shim's qhw record building relies on.
-    python -m pip install 'jsonschema>=4'
+    uv pip install 'jsonschema>=4'
 
     # Build mqt-cc from the mounted checkout, apart from QFw's SDK dependencies.
     mqt_cc_venv="${QFW_BASE}/mqt-cc-venv"
-    python -m venv "${mqt_cc_venv}"
-    "${mqt_cc_venv}/bin/python" -m pip install --upgrade pip
+    [ -d "${mqt_cc_venv}" ] || uv venv --python python3 "${mqt_cc_venv}"
+    uv pip install --python "${mqt_cc_venv}/bin/python" --upgrade pip
     CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS_OVERRIDE:-4}" \
-        "${mqt_cc_venv}/bin/python" -m pip install \
+        uv pip install --python "${mqt_cc_venv}/bin/python" \
         "${MQT_CORE_SRC}" 'qiskit==2.5.2'
 else
     # shellcheck disable=SC1091
