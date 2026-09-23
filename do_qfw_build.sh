@@ -183,9 +183,9 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     # Build mqt-cc from the mounted checkout, apart from QFw's SDK dependencies.
     mqt_cc_venv="${QFW_BASE}/mqt-cc-venv"
     [ -d "${mqt_cc_venv}" ] || uv venv --python python3 "${mqt_cc_venv}"
-    uv pip install --python "${mqt_cc_venv}/bin/python" --upgrade pip
+    uv pip install --python "${mqt_cc_venv}" --upgrade pip
     CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS_OVERRIDE:-4}" \
-        uv pip install --python "${mqt_cc_venv}/bin/python" \
+        uv pip install --python "${mqt_cc_venv}" \
         "${MQT_CORE_SRC}" 'qiskit==2.5.2'
 else
     # shellcheck disable=SC1091

@@ -395,9 +395,9 @@ RUN set -ex \
 # setup/requirements.txt supplies Qiskit.
 RUN set -ex \
     && uv venv --python python3 "${QFW_IMAGE_VENV}" \
-    && uv pip install --python "${QFW_IMAGE_VENV}/bin/python" --upgrade \
+    && uv pip install --python "${QFW_IMAGE_VENV}" --upgrade \
         pip setuptools wheel \
-    && uv pip install --python "${QFW_IMAGE_VENV}/bin/python" \
+    && uv pip install --python "${QFW_IMAGE_VENV}" \
         -r "${QFW_IMAGE_SOURCE}/setup/build-requirements.txt" \
         -r "${QFW_IMAGE_SOURCE}/setup/requirements.txt" \
         "qrmi==${QRMI_VERSION}" \
@@ -438,9 +438,9 @@ RUN set -ex \
     && test "$(git -C "${MQT_CORE_SOURCE}" rev-parse HEAD)" = \
         "${MQT_CORE_SOURCE_REVISION}" \
     && uv venv --python python3 "${MQT_CC_VENV}" \
-    && uv pip install --python "${MQT_CC_VENV}/bin/python" --upgrade pip \
+    && uv pip install --python "${MQT_CC_VENV}" --upgrade pip \
     && CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
-        uv pip install --python "${MQT_CC_VENV}/bin/python" \
+        uv pip install --python "${MQT_CC_VENV}" \
         "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' \
     && rm -rf "${MQT_CORE_SOURCE}"
 
@@ -456,7 +456,7 @@ RUN set -ex \
     && git -C "${QFW_SLURM_SOURCE}" switch --detach FETCH_HEAD \
     && test "$(git -C "${QFW_SLURM_SOURCE}" rev-parse HEAD)" = \
         "${QFW_SLURM_SOURCE_REVISION}" \
-    && uv pip install --python "${QFW_IMAGE_VENV}/bin/python" \
+    && uv pip install --python "${QFW_IMAGE_VENV}" \
         --no-build-isolation "${QFW_SLURM_SOURCE}" pytest \
     && cmake -S "${QFW_SLURM_SOURCE}" -B "${QFW_SLURM_BUILD}" \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
