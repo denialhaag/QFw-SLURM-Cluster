@@ -189,7 +189,7 @@ image:
 
 </details>
 
-To validate the QRMI/QDMI shim (local routing/normalization and device introspection on IQM hardware) or run the mqt-cc compiler smoke, see [TESTING.md](TESTING.md).
+To validate the QRMI/QDMI shim (local routing/normalization and device introspection on IQM hardware) or run the `mqt-cc` smoke test, see [TESTING.md](TESTING.md).
 
 ## Build And Run [QFw]
 

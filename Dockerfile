@@ -426,15 +426,16 @@ RUN set -ex \
         "${SIMULATOR_WORK_ROOT}"
 
 # The separate environment keeps Qiskit 2.5.x apart from QFw's SDK pins.
-ARG MQT_CC_MLIR_VERSION=23.1.1
-ARG MQT_CC_MLIR_PREFIX=/opt/llvm-23.1.1
-ENV MQT_CC_MLIR_DIR=${MQT_CC_MLIR_PREFIX}/lib/cmake/mlir
+ARG SETUP_MLIR_VERSION=v1.4.2
+ARG MLIR_VERSION=23.1.1
+ARG MLIR_PREFIX=/opt/llvm-23.1.1
+ENV MLIR_DIR=${MLIR_PREFIX}/lib/cmake/mlir
 RUN set -ex \
     && curl -LsSf \
-        https://github.com/munich-quantum-software/setup-mlir/releases/download/v1.4.2/setup-mlir.sh \
+        "https://github.com/munich-quantum-software/setup-mlir/releases/download/${SETUP_MLIR_VERSION}/setup-mlir.sh" \
         -o /tmp/setup-mlir.sh \
-    && bash /tmp/setup-mlir.sh -v "${MQT_CC_MLIR_VERSION}" -p "${MQT_CC_MLIR_PREFIX}" \
-    && test -f "${MQT_CC_MLIR_DIR}/MLIRConfig.cmake" \
+    && bash /tmp/setup-mlir.sh -v "${MLIR_VERSION}" -p "${MLIR_PREFIX}" \
+    && test -f "${MLIR_DIR}/MLIRConfig.cmake" \
     && rm /tmp/setup-mlir.sh
 
 ARG MQT_CORE_SOURCE_REVISION
@@ -446,8 +447,7 @@ RUN set -ex \
         "${MQT_CORE_SOURCE_REVISION}" \
     && python3 -m venv "${MQT_CC_VENV}" \
     && "${MQT_CC_VENV}/bin/python" -m pip install --upgrade pip \
-    && MLIR_DIR="${MQT_CC_MLIR_DIR}" \
-        CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
+    && CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
         "${MQT_CC_VENV}/bin/python" -m pip install \
         "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' 'iqm-qdmi==1.4.0' \
     && rm -rf "${MQT_CORE_SOURCE}"

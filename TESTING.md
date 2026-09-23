@@ -1,4 +1,4 @@
-# Testing the QRMI/QDMI shim and mqt-cc
+# Testing the QRMI/QDMI shim and `mqt-cc`
 
 This describes how to validate the QFw QRMI/QDMI front-end
 (`services/svc_lib_qpm`) and the MQT Compiler Collection (`mqt-cc`) in the
@@ -190,7 +190,7 @@ That wording predates the shim supplying the environment itself. Treat it as a
 QRMI failure and read the exception name in the parentheses. The run still
 passes on the QDMI leg.
 
-## mqt-cc smoke (no credentials)
+## `mqt-cc` smoke test (no credentials)
 
 The image builds MQT Core from the ref selected by `do_configure.sh` and installs
 it with Qiskit and `iqm-qdmi` at `/opt/openqse/mqt-cc-venv`. This separate
@@ -229,5 +229,5 @@ The full `shim-smoke.out`, in particular the qubit and edge counts from each
 leg, whether the QRMI leg ran or reported unavailable, and whether the
 `cross-library: ... agree` line appeared.
 
-For the compiler smoke, capture `mqt-cc-smoke.out` or the Slurm job's
+For the `mqt-cc` smoke test, capture `mqt-cc-smoke.out` or the Slurm job's
 `mqt-cc-smoke.<job-id>.out`.

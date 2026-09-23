@@ -84,7 +84,7 @@ set -euo pipefail
 QFW_BASE="${QFW_BASE:-/workspace/qfw-container-base}"
 QFW_SRC="${QFW_SRC:-${QFW_DEV_SRC:-${QFW_BASE}/QFw}}"
 MQT_CORE_SRC="${QFW_BASE}/mqt-core"
-MQT_CC_MLIR_DIR="${MQT_CC_MLIR_DIR:-/opt/llvm-23.1.1/lib/cmake/mlir}"
+export MLIR_DIR="${MLIR_DIR:-/opt/llvm-23.1.1/lib/cmake/mlir}"
 QFW_VENV="${QFW_VENV:-${QFW_DEV_VENV:-${QFW_BASE}/qfw-venv}}"
 QFW_BUILD="${QFW_BUILD:-${QFW_DEV_BUILD:-${QFW_BASE}/qfw-build}}"
 QFW_PREFIX="${QFW_PREFIX:-${QFW_DEV_PREFIX:-${QFW_BASE}/qfw-install}}"
@@ -138,8 +138,8 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
         echo "    git clone https://github.com/munich-quantum-toolkit/core.git ${QFW_HOST_BASE}/mqt-core" >&2
         exit 1
     fi
-    if [ ! -f "${MQT_CC_MLIR_DIR}/MLIRConfig.cmake" ]; then
-        echo "No MLIR installation at ${MQT_CC_MLIR_DIR}. Rebuild the cluster image first." >&2
+    if [ ! -f "${MLIR_DIR}/MLIRConfig.cmake" ]; then
+        echo "No MLIR installation at ${MLIR_DIR}. Rebuild the cluster image first." >&2
         exit 1
     fi
 fi
@@ -209,8 +209,7 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     mqt_cc_venv="${QFW_BASE}/mqt-cc-venv"
     python -m venv "${mqt_cc_venv}"
     "${mqt_cc_venv}/bin/python" -m pip install --upgrade pip
-    MLIR_DIR="${MQT_CC_MLIR_DIR}" \
-        CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS_OVERRIDE:-4}" \
+    CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS_OVERRIDE:-4}" \
         "${mqt_cc_venv}/bin/python" -m pip install \
         "${MQT_CORE_SRC}" 'qiskit==2.5.2' 'iqm-qdmi==1.4.0'
 else
