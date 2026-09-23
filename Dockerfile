@@ -425,7 +425,6 @@ RUN set -ex \
     && rm -rf "${QFW_IMAGE_SOURCE}" "${QFW_IMAGE_BUILD}" \
         "${SIMULATOR_WORK_ROOT}"
 
-# Build MQT Core from source for compiler features beyond the released wheel.
 # The separate environment keeps Qiskit 2.5.x apart from QFw's SDK pins.
 ARG MQT_CC_MLIR_VERSION=23.1.1
 ARG MQT_CC_MLIR_PREFIX=/opt/llvm-23.1.1

@@ -64,9 +64,8 @@ git switch release/v0.1
 
 The cluster branch controls this repository's files. The QFw, qfw-slurm, and
 MQT Core sources installed into the image come from the refs passed to
-`do_configure.sh`. Use `--mqt-core-ref` to select a branch or commit with the
-compiler features you need. Release builds should pass matching QFw and
-qfw-slurm release tags explicitly.
+`do_configure.sh`. Release builds should pass matching QFw and qfw-slurm
+release tags explicitly.
 
 If `--prefix` is omitted, `do_configure.sh` creates and uses:
 
