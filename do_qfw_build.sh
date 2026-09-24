@@ -16,11 +16,11 @@ Everything lands on the shared mount, so every node sees the same install and
 the tree being built is your own shared-dir/QFw checkout:
 
   source              \${QFW_BASE}/QFw
-  mqt-core source     \${QFW_BASE}/mqt-core
   python venv         \${QFW_BASE}/qfw-venv
-  mqt-cc venv         \${QFW_BASE}/mqt-cc-venv
   build tree          \${QFW_BASE}/qfw-build
   install tree        \${QFW_BASE}/qfw-install
+  mqt-core source     \${QFW_BASE}/mqt-core
+  mqt-cc venv         \${QFW_BASE}/mqt-cc-venv
 
 Activate the result inside a container with:
 
@@ -83,13 +83,13 @@ set -euo pipefail
 
 QFW_BASE="${QFW_BASE:-/workspace/qfw-container-base}"
 QFW_SRC="${QFW_DEV_SRC:-${QFW_BASE}/QFw}"
-MQT_CORE_SRC="${QFW_BASE}/mqt-core"
-export MLIR_DIR="${MLIR_DIR:-/opt/llvm-23.1.1/lib/cmake/mlir}"
 QFW_VENV="${QFW_DEV_VENV:-${QFW_BASE}/qfw-venv}"
 QFW_BUILD="${QFW_DEV_BUILD:-${QFW_BASE}/qfw-build}"
 QFW_PREFIX="${QFW_DEV_PREFIX:-${QFW_BASE}/qfw-install}"
 QFW_HOST_BASE="${QFW_HOST_BASE:-shared-dir}"
 QFW_CONTAINER_NAME="${QFW_CONTAINER_NAME:-slurmctld}"
+MQT_CORE_SRC="${QFW_BASE}/mqt-core"
+export MLIR_DIR="${MLIR_DIR:-/opt/llvm-23.1.1/lib/cmake/mlir}"
 
 jobs="${QFW_BUILD_JOBS_OVERRIDE:-}"
 [ -n "${jobs}" ] || jobs="$(nproc)"
@@ -179,14 +179,6 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
     # dependencies are not resolved. qhw-data needs jsonschema for
     # schema validation, which the shim's qhw record building relies on.
     uv pip install 'jsonschema>=4'
-
-    # Build mqt-cc from the mounted checkout, apart from QFw's SDK dependencies.
-    mqt_cc_venv="${QFW_BASE}/mqt-cc-venv"
-    [ -d "${mqt_cc_venv}" ] || uv venv --python python3 "${mqt_cc_venv}"
-    uv pip install --python "${mqt_cc_venv}" --upgrade pip
-    CMAKE_BUILD_PARALLEL_LEVEL="${jobs}" \
-        uv pip install --python "${mqt_cc_venv}" \
-        "${MQT_CORE_SRC}" 'qiskit==2.5.2'
 else
     # shellcheck disable=SC1091
     source "${QFW_VENV}/bin/activate"
@@ -203,6 +195,16 @@ cmake --build "${QFW_BUILD}" -j "${jobs}"
 
 echo "== cmake install"
 cmake --install "${QFW_BUILD}"
+
+if [ "${QFW_SKIP_VENV}" != "true" ]; then
+    # Build mqt-cc from the mounted checkout, apart from QFw's SDK dependencies.
+    mqt_cc_venv="${QFW_BASE}/mqt-cc-venv"
+    [ -d "${mqt_cc_venv}" ] || uv venv --python python3 "${mqt_cc_venv}"
+    uv pip install --python "${mqt_cc_venv}" --upgrade pip
+    CMAKE_BUILD_PARALLEL_LEVEL="${jobs}" \
+        uv pip install --python "${mqt_cc_venv}" \
+        "${MQT_CORE_SRC}" 'qiskit==2.5.2'
+fi
 
 echo
 echo "QFw installed to ${QFW_PREFIX}"

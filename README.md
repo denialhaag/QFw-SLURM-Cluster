@@ -249,13 +249,13 @@ Create development directories only as needed. A typical layout is:
 ```text
 shared-dir/
   QFw/          # optional active QFw checkout
-  mqt-core/     # optional active MQT Core checkout
   qfw-venv/     # optional Python venv created inside the container
-  mqt-cc-venv/  # optional compiler Python venv created inside the container
   qfw-build/    # optional QFw build tree
   qfw-install/  # optional QFw install tree
   benchmarks/   # optional benchmark outputs
   rocm/         # optional ROCm prefix for ROCm/HIP builds
+  mqt-core/     # optional active MQT Core checkout
+  mqt-cc-venv/  # optional compiler Python venv created inside the container
 ```
 
 1. Configure the host mount and clone [QFw] and MQT Core:

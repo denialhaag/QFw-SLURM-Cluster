@@ -10,10 +10,10 @@ DEFAULT_SLURM_TAG="slurm-25-05-0-1"
 DEFAULT_QFW_BUILD_JOBS="4"
 DEFAULT_QFW_REPOSITORY="https://github.com/openQSE/QFw.git"
 DEFAULT_QFW_REF="main"
-DEFAULT_MQT_CORE_REPOSITORY="https://github.com/munich-quantum-toolkit/core.git"
-DEFAULT_MQT_CORE_REF="151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6"
 DEFAULT_QFW_SLURM_REPOSITORY="https://github.com/openQSE/qfw-slurm.git"
 DEFAULT_QFW_SLURM_REF="main"
+DEFAULT_MQT_CORE_REPOSITORY="https://github.com/munich-quantum-toolkit/core.git"
+DEFAULT_MQT_CORE_REF="151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6"
 ENV_FILE="${SCRIPT_DIR}/qfw-install.env"
 COMPOSE_ENV_FILE="${SCRIPT_DIR}/.env"
 
@@ -37,16 +37,16 @@ Options:
                        Default: ${DEFAULT_QFW_REPOSITORY}
   --qfw-ref REF        QFw branch, tag, or commit used by the image build
                        Default: ${DEFAULT_QFW_REF}
-  --mqt-core-repository URL
-                       MQT Core repository used for the compiler build
-                       Default: ${DEFAULT_MQT_CORE_REPOSITORY}
-  --mqt-core-ref REF   MQT Core branch, tag, or commit used by the image build
-                       Default: ${DEFAULT_MQT_CORE_REF}
   --qfw-slurm-repository URL
                        qfw-slurm repository used by the image build
                        Default: ${DEFAULT_QFW_SLURM_REPOSITORY}
   --qfw-slurm-ref REF  qfw-slurm branch, tag, or commit used by the image
                        Default: ${DEFAULT_QFW_SLURM_REF}
+  --mqt-core-repository URL
+                       MQT Core repository used for the compiler build
+                       Default: ${DEFAULT_MQT_CORE_REPOSITORY}
+  --mqt-core-ref REF   MQT Core branch, tag, or commit used by the image build
+                       Default: ${DEFAULT_MQT_CORE_REF}
   --dry-run            Print the resolved settings without creating anything
   -h, --help           Show this help text
 
@@ -67,10 +67,10 @@ SLURM_TAG="${DEFAULT_SLURM_TAG}"
 QFW_BUILD_JOBS="${DEFAULT_QFW_BUILD_JOBS}"
 QFW_REPOSITORY="${DEFAULT_QFW_REPOSITORY}"
 QFW_REF="${DEFAULT_QFW_REF}"
-MQT_CORE_REPOSITORY="${DEFAULT_MQT_CORE_REPOSITORY}"
-MQT_CORE_REF="${DEFAULT_MQT_CORE_REF}"
 QFW_SLURM_REPOSITORY="${DEFAULT_QFW_SLURM_REPOSITORY}"
 QFW_SLURM_REF="${DEFAULT_QFW_SLURM_REF}"
+MQT_CORE_REPOSITORY="${DEFAULT_MQT_CORE_REPOSITORY}"
+MQT_CORE_REF="${DEFAULT_MQT_CORE_REF}"
 DRY_RUN=false
 
 while [ "$#" -gt 0 ]; do
@@ -113,20 +113,20 @@ while [ "$#" -gt 0 ]; do
             QFW_REF="${2:?missing value for --qfw-ref}"
             shift 2
             ;;
-        --mqt-core-repository)
-            MQT_CORE_REPOSITORY="${2:?missing value for --mqt-core-repository}"
-            shift 2
-            ;;
-        --mqt-core-ref)
-            MQT_CORE_REF="${2:?missing value for --mqt-core-ref}"
-            shift 2
-            ;;
         --qfw-slurm-repository)
             QFW_SLURM_REPOSITORY="${2:?missing value for --qfw-slurm-repository}"
             shift 2
             ;;
         --qfw-slurm-ref)
             QFW_SLURM_REF="${2:?missing value for --qfw-slurm-ref}"
+            shift 2
+            ;;
+        --mqt-core-repository)
+            MQT_CORE_REPOSITORY="${2:?missing value for --mqt-core-repository}"
+            shift 2
+            ;;
+        --mqt-core-ref)
+            MQT_CORE_REF="${2:?missing value for --mqt-core-ref}"
             shift 2
             ;;
         --dry-run)
@@ -190,11 +190,11 @@ print_settings() {
     echo "  QFW_BUILD_JOBS=${QFW_BUILD_JOBS}"
     echo "  QFW_REPOSITORY=${QFW_REPOSITORY}"
     echo "  QFW_REF=${QFW_REF}"
-    echo "  MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}"
-    echo "  MQT_CORE_REF=${MQT_CORE_REF}"
     echo "  QFW_SLURM_REPOSITORY=${QFW_SLURM_REPOSITORY}"
     echo "  QFW_SLURM_REF=${QFW_SLURM_REF}"
     echo "  QFW_CONTAINER_BASE=${BASE_DIR}"
+    echo "  MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}"
+    echo "  MQT_CORE_REF=${MQT_CORE_REF}"
 }
 
 validate_image_settings
@@ -216,13 +216,13 @@ SLURM_TAG=${SLURM_TAG}
 QFW_BUILD_JOBS=${QFW_BUILD_JOBS}
 QFW_REPOSITORY=${QFW_REPOSITORY}
 QFW_REF=${QFW_REF}
-MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}
-MQT_CORE_REF=${MQT_CORE_REF}
 QFW_SLURM_REPOSITORY=${QFW_SLURM_REPOSITORY}
 QFW_SLURM_REF=${QFW_SLURM_REF}
 IMAGE_NAME=${IMAGE_NAME}
 IMAGE_TAG=${IMAGE_TAG}
 QFW_CONTAINER_BASE=${BASE_DIR}
+MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}
+MQT_CORE_REF=${MQT_CORE_REF}
 EOF
 
 cp "${ENV_FILE}" "${COMPOSE_ENV_FILE}"
@@ -236,9 +236,9 @@ echo "  SLURM_TAG=${SLURM_TAG}"
 echo "  QFW_BUILD_JOBS=${QFW_BUILD_JOBS}"
 echo "  QFW_REPOSITORY=${QFW_REPOSITORY}"
 echo "  QFW_REF=${QFW_REF}"
-echo "  MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}"
-echo "  MQT_CORE_REF=${MQT_CORE_REF}"
 echo "  QFW_SLURM_REPOSITORY=${QFW_SLURM_REPOSITORY}"
 echo "  QFW_SLURM_REF=${QFW_SLURM_REF}"
 echo "  QFW_CONTAINER_BASE=${BASE_DIR}"
+echo "  MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}"
+echo "  MQT_CORE_REF=${MQT_CORE_REF}"
 echo "Optional QFw development directories are created only when needed."

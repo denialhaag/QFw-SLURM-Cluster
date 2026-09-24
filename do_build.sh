@@ -77,10 +77,10 @@ if ${DRY_RUN}; then
         QFW_BUILD_JOBS="${QFW_BUILD_JOBS:-4}"
         QFW_REPOSITORY="${QFW_REPOSITORY:-https://github.com/openQSE/QFw.git}"
         QFW_REF="${QFW_REF:-main}"
-        MQT_CORE_REPOSITORY="${MQT_CORE_REPOSITORY:-https://github.com/munich-quantum-toolkit/core.git}"
-        MQT_CORE_REF="${MQT_CORE_REF:-151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6}"
         QFW_SLURM_REPOSITORY="${QFW_SLURM_REPOSITORY:-https://github.com/openQSE/qfw-slurm.git}"
         QFW_SLURM_REF="${QFW_SLURM_REF:-main}"
+        MQT_CORE_REPOSITORY="${MQT_CORE_REPOSITORY:-https://github.com/munich-quantum-toolkit/core.git}"
+        MQT_CORE_REF="${MQT_CORE_REF:-151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6}"
         echo "Would run:"
         if ${NO_CACHE}; then
             echo "  docker build \\"
@@ -93,10 +93,10 @@ if ${DRY_RUN}; then
         echo "    --build-arg QFW_BUILD_JOBS=${QFW_BUILD_JOBS} \\"
         echo "    --build-arg QFW_REPOSITORY=${QFW_REPOSITORY} \\"
         echo "    --build-arg QFW_REF=${QFW_REF} \\"
-        echo "    --build-arg MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY} \\"
-        echo "    --build-arg MQT_CORE_REF=${MQT_CORE_REF} \\"
         echo "    --build-arg QFW_SLURM_REPOSITORY=${QFW_SLURM_REPOSITORY} \\"
         echo "    --build-arg QFW_SLURM_REF=${QFW_SLURM_REF} \\"
+        echo "    --build-arg MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY} \\"
+        echo "    --build-arg MQT_CORE_REF=${MQT_CORE_REF} \\"
         echo "    ${SCRIPT_DIR}"
     else
         cat <<EOF
@@ -114,10 +114,10 @@ set +a
 QFW_BUILD_JOBS="${QFW_BUILD_JOBS:-4}"
 QFW_REPOSITORY="${QFW_REPOSITORY:-https://github.com/openQSE/QFw.git}"
 QFW_REF="${QFW_REF:-main}"
-MQT_CORE_REPOSITORY="${MQT_CORE_REPOSITORY:-https://github.com/munich-quantum-toolkit/core.git}"
-MQT_CORE_REF="${MQT_CORE_REF:-151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6}"
 QFW_SLURM_REPOSITORY="${QFW_SLURM_REPOSITORY:-https://github.com/openQSE/qfw-slurm.git}"
 QFW_SLURM_REF="${QFW_SLURM_REF:-main}"
+MQT_CORE_REPOSITORY="${MQT_CORE_REPOSITORY:-https://github.com/munich-quantum-toolkit/core.git}"
+MQT_CORE_REF="${MQT_CORE_REF:-151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6}"
 
 resolve_remote_ref() {
     local repository="$1"
@@ -152,19 +152,19 @@ resolve_remote_ref() {
 }
 
 QFW_SOURCE_REVISION="$(resolve_remote_ref "${QFW_REPOSITORY}" "${QFW_REF}")"
-MQT_CORE_SOURCE_REVISION="$(resolve_remote_ref "${MQT_CORE_REPOSITORY}" "${MQT_CORE_REF}")"
 QFW_SLURM_SOURCE_REVISION="$(
     resolve_remote_ref "${QFW_SLURM_REPOSITORY}" "${QFW_SLURM_REF}"
 )"
+MQT_CORE_SOURCE_REVISION="$(resolve_remote_ref "${MQT_CORE_REPOSITORY}" "${MQT_CORE_REF}")"
 
 echo "Building ${IMAGE_NAME}:${IMAGE_TAG} with SLURM_TAG=${SLURM_TAG}"
 echo "Building image-contained QFw with QFW_BUILD_JOBS=${QFW_BUILD_JOBS}"
 echo "Using QFw ${QFW_REF} from ${QFW_REPOSITORY}"
-echo "Using MQT Core ${MQT_CORE_REF} from ${MQT_CORE_REPOSITORY}"
-echo "Using qfw-slurm ${QFW_SLURM_REF} from ${QFW_SLURM_REPOSITORY}"
 echo "Resolved QFw revision ${QFW_SOURCE_REVISION}"
-echo "Resolved MQT Core revision ${MQT_CORE_SOURCE_REVISION}"
+echo "Using qfw-slurm ${QFW_SLURM_REF} from ${QFW_SLURM_REPOSITORY}"
 echo "Resolved qfw-slurm revision ${QFW_SLURM_SOURCE_REVISION}"
+echo "Using MQT Core ${MQT_CORE_REF} from ${MQT_CORE_REPOSITORY}"
+echo "Resolved MQT Core revision ${MQT_CORE_SOURCE_REVISION}"
 
 if ${NO_CACHE}; then
     docker build \
@@ -175,12 +175,12 @@ if ${NO_CACHE}; then
         --build-arg "QFW_REPOSITORY=${QFW_REPOSITORY}" \
         --build-arg "QFW_REF=${QFW_REF}" \
         --build-arg "QFW_SOURCE_REVISION=${QFW_SOURCE_REVISION}" \
-        --build-arg "MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}" \
-        --build-arg "MQT_CORE_REF=${MQT_CORE_REF}" \
-        --build-arg "MQT_CORE_SOURCE_REVISION=${MQT_CORE_SOURCE_REVISION}" \
         --build-arg "QFW_SLURM_REPOSITORY=${QFW_SLURM_REPOSITORY}" \
         --build-arg "QFW_SLURM_REF=${QFW_SLURM_REF}" \
         --build-arg "QFW_SLURM_SOURCE_REVISION=${QFW_SLURM_SOURCE_REVISION}" \
+        --build-arg "MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}" \
+        --build-arg "MQT_CORE_REF=${MQT_CORE_REF}" \
+        --build-arg "MQT_CORE_SOURCE_REVISION=${MQT_CORE_SOURCE_REVISION}" \
         "${SCRIPT_DIR}"
 else
     docker build \
@@ -190,11 +190,11 @@ else
         --build-arg "QFW_REPOSITORY=${QFW_REPOSITORY}" \
         --build-arg "QFW_REF=${QFW_REF}" \
         --build-arg "QFW_SOURCE_REVISION=${QFW_SOURCE_REVISION}" \
-        --build-arg "MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}" \
-        --build-arg "MQT_CORE_REF=${MQT_CORE_REF}" \
-        --build-arg "MQT_CORE_SOURCE_REVISION=${MQT_CORE_SOURCE_REVISION}" \
         --build-arg "QFW_SLURM_REPOSITORY=${QFW_SLURM_REPOSITORY}" \
         --build-arg "QFW_SLURM_REF=${QFW_SLURM_REF}" \
         --build-arg "QFW_SLURM_SOURCE_REVISION=${QFW_SLURM_SOURCE_REVISION}" \
+        --build-arg "MQT_CORE_REPOSITORY=${MQT_CORE_REPOSITORY}" \
+        --build-arg "MQT_CORE_REF=${MQT_CORE_REF}" \
+        --build-arg "MQT_CORE_SOURCE_REVISION=${MQT_CORE_SOURCE_REVISION}" \
         "${SCRIPT_DIR}"
 fi

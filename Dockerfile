@@ -225,22 +225,22 @@ ARG QFW_BUILD_JOBS=4
 ARG QFW_REPOSITORY=https://github.com/openQSE/QFw.git
 ARG QFW_REF=main
 ARG QFW_DEFW_REPOSITORY=
-ARG MQT_CORE_REPOSITORY=https://github.com/munich-quantum-toolkit/core.git
-ARG MQT_CORE_REF=151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6
 ARG QFW_SLURM_REPOSITORY=https://github.com/openQSE/qfw-slurm.git
 ARG QFW_SLURM_REF=main
 ARG QFW_IMAGE_SOURCE=/tmp/qfw-source
 ARG QFW_IMAGE_BUILD=/tmp/qfw-build
 ARG QFW_IMAGE_PREFIX=/opt/openqse/qfw
 ARG QFW_IMAGE_VENV=/opt/openqse/qfw-venv
-ARG MQT_CC_VENV=/opt/openqse/mqt-cc-venv
-ARG MQT_CORE_SOURCE=/tmp/mqt-core-source
 ARG QFW_SLURM_SOURCE=/tmp/qfw-slurm-source
 ARG QFW_SLURM_BUILD=/tmp/qfw-slurm-build
 ARG QFW_SLURM_PREFIX=/opt/openqse/qfw-slurm
 ARG NWQSIM_PREFIX=/opt/openqse/nwqsim
 ARG TNQVM_PREFIX=/opt/openqse/tnqvm
 ARG SIMULATOR_WORK_ROOT=/tmp/qfw-simulator-build
+ARG MQT_CORE_REPOSITORY=https://github.com/munich-quantum-toolkit/core.git
+ARG MQT_CORE_REF=151a69f9f99d0d1fb3bd735833d3f338ebb4d8a6
+ARG MQT_CC_VENV=/opt/openqse/mqt-cc-venv
+ARG MQT_CORE_SOURCE=/tmp/mqt-core-source
 
 ENV QFW_BASE=/workspace/qfw-container-base \
     QFW_BUILD_JOBS=${QFW_BUILD_JOBS}
@@ -417,38 +417,6 @@ RUN set -ex \
     && rm -rf "${QFW_IMAGE_SOURCE}" "${QFW_IMAGE_BUILD}" \
         "${SIMULATOR_WORK_ROOT}"
 
-# The separate environment keeps Qiskit 2.5.x apart from QFw's SDK pins.
-ARG SETUP_MLIR_VERSION=v1.4.2
-ARG MLIR_VERSION=23.1.1
-ARG MLIR_PREFIX=/opt/llvm-23.1.1
-ENV MLIR_DIR=${MLIR_PREFIX}/lib/cmake/mlir
-RUN set -ex \
-    && curl -LsSf \
-        "https://github.com/munich-quantum-software/setup-mlir/releases/download/${SETUP_MLIR_VERSION}/setup-mlir.sh" \
-        -o /tmp/setup-mlir.sh \
-    && bash /tmp/setup-mlir.sh -v "${MLIR_VERSION}" -p "${MLIR_PREFIX}" \
-    && test -f "${MLIR_DIR}/MLIRConfig.cmake" \
-    && rm /tmp/setup-mlir.sh
-
-ARG MQT_CORE_SOURCE_REVISION
-RUN set -ex \
-    && git clone "${MQT_CORE_REPOSITORY}" "${MQT_CORE_SOURCE}" \
-    && git -C "${MQT_CORE_SOURCE}" fetch origin "${MQT_CORE_REF}" \
-    && git -C "${MQT_CORE_SOURCE}" switch --detach FETCH_HEAD \
-    && test "$(git -C "${MQT_CORE_SOURCE}" rev-parse HEAD)" = \
-        "${MQT_CORE_SOURCE_REVISION}" \
-    && uv venv --python python3 "${MQT_CC_VENV}" \
-    && uv pip install --python "${MQT_CC_VENV}" --upgrade pip \
-    && CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
-        uv pip install --python "${MQT_CC_VENV}" \
-        "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' \
-    && rm -rf "${MQT_CORE_SOURCE}"
-
-COPY shared-dir/mqt-cc-smoke.sbatch /tmp/mqt-cc-smoke.sbatch
-RUN set -ex \
-    && MQT_CC_VENV="${MQT_CC_VENV}" bash /tmp/mqt-cc-smoke.sbatch \
-    && rm /tmp/mqt-cc-smoke.sbatch
-
 ARG QFW_SLURM_SOURCE_REVISION
 RUN set -ex \
     && git clone "${QFW_SLURM_REPOSITORY}" "${QFW_SLURM_SOURCE}" \
@@ -496,18 +464,50 @@ RUN set -ex \
     && test -x "${QFW_IMAGE_VENV}/bin/qfw-squeue" \
     && rm -rf "${QFW_SLURM_SOURCE}" "${QFW_SLURM_BUILD}"
 
+# The separate environment keeps Qiskit 2.5.x apart from QFw's SDK pins.
+ARG SETUP_MLIR_VERSION=v1.4.2
+ARG MLIR_VERSION=23.1.1
+ARG MLIR_PREFIX=/opt/llvm-23.1.1
+ENV MLIR_DIR=${MLIR_PREFIX}/lib/cmake/mlir
+RUN set -ex \
+    && curl -LsSf \
+        "https://github.com/munich-quantum-software/setup-mlir/releases/download/${SETUP_MLIR_VERSION}/setup-mlir.sh" \
+        -o /tmp/setup-mlir.sh \
+    && bash /tmp/setup-mlir.sh -v "${MLIR_VERSION}" -p "${MLIR_PREFIX}" \
+    && test -f "${MLIR_DIR}/MLIRConfig.cmake" \
+    && rm /tmp/setup-mlir.sh
+
+ARG MQT_CORE_SOURCE_REVISION
+RUN set -ex \
+    && git clone "${MQT_CORE_REPOSITORY}" "${MQT_CORE_SOURCE}" \
+    && git -C "${MQT_CORE_SOURCE}" fetch origin "${MQT_CORE_REF}" \
+    && git -C "${MQT_CORE_SOURCE}" switch --detach FETCH_HEAD \
+    && test "$(git -C "${MQT_CORE_SOURCE}" rev-parse HEAD)" = \
+        "${MQT_CORE_SOURCE_REVISION}" \
+    && uv venv --python python3 "${MQT_CC_VENV}" \
+    && uv pip install --python "${MQT_CC_VENV}" --upgrade pip \
+    && CMAKE_BUILD_PARALLEL_LEVEL="${QFW_BUILD_JOBS}" \
+        uv pip install --python "${MQT_CC_VENV}" \
+        "${MQT_CORE_SOURCE}" 'qiskit==2.5.2' \
+    && rm -rf "${MQT_CORE_SOURCE}"
+
+COPY shared-dir/mqt-cc-smoke-test.sbatch /tmp/mqt-cc-smoke-test.sbatch
+RUN set -ex \
+    && MQT_CC_VENV="${MQT_CC_VENV}" bash /tmp/mqt-cc-smoke-test.sbatch \
+    && rm /tmp/mqt-cc-smoke-test.sbatch
+
 ENV QFW_IMAGE_PREFIX=${QFW_IMAGE_PREFIX} \
     QFW_IMAGE_VENV=${QFW_IMAGE_VENV} \
     QFW_PREFIX=${QFW_IMAGE_PREFIX} \
     QFW_VENV=${QFW_IMAGE_VENV} \
-    MQT_CC_VENV=${MQT_CC_VENV} \
     QFW_SLURM_PREFIX=${QFW_SLURM_PREFIX} \
     NWQSIM_PREFIX=${NWQSIM_PREFIX} \
     TNQVM_PREFIX=${TNQVM_PREFIX} \
     QRMI_PREFIX=${QRMI_PREFIX} \
     QRMI_VERSION=${QRMI_VERSION} \
     MODULEPATH=/etc/modulefiles:/usr/share/Modules/modulefiles:/usr/share/modulefiles \
-    LD_LIBRARY_PATH=${OMPI_PREFIX}/lib:${OMPI_PREFIX}/lib64:${QRMI_PREFIX}/lib:${LD_LIBRARY_PATH}
+    LD_LIBRARY_PATH=${OMPI_PREFIX}/lib:${OMPI_PREFIX}/lib64:${QRMI_PREFIX}/lib:${LD_LIBRARY_PATH} \
+    MQT_CC_VENV=${MQT_CC_VENV}
 
 COPY modulefiles /etc/modulefiles
 RUN set -ex \

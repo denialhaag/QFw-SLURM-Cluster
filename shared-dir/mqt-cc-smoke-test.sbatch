@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH --job-name=mqt-cc-smoke
-#SBATCH --output=mqt-cc-smoke.%J.out
+#SBATCH --job-name=mqt-cc-smoke-test
+#SBATCH --output=mqt-cc-smoke-test.%J.out
 #SBATCH --time=00:05:00
 #SBATCH --partition=normal
 #SBATCH --nodes=1
@@ -9,7 +9,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=512M
 #
-# Compile for the bundled IQM Garnet model and run the QIR with local DDSIM.
+# Smoke test: compile for the bundled IQM Garnet model and run QIR on
+# local DDSIM.
 # No QPU or credentials needed.
 
 set -euo pipefail
@@ -20,7 +21,7 @@ if [ ! -x "${MQT_CC_VENV}/bin/python" ]; then
     exit 1
 fi
 
-echo "[$(date)] mqt-cc-smoke on $(hostname)"
+echo "[$(date)] mqt-cc-smoke-test on $(hostname)"
 
 "${MQT_CC_VENV}/bin/python" - <<'PY'
 from qiskit import QuantumCircuit
@@ -41,7 +42,7 @@ circuit.measure([2, 0, 1], [0, 1, 2])
 
 compiled = compile_program(circuit, target=target, program_format=ProgramFormat.QIR_BASE_STRING)
 assert compiled.program_format == ProgramFormat.QIR_BASE_STRING
-print("[mqt-cc-smoke] Qiskit -> mqt-cc -> QIR Base: OK")
+print("[mqt-cc-smoke-test] Qiskit -> mqt-cc -> QIR Base: OK")
 
 simulator = open_device("mqt.ddsim.default")
 job = simulator.submit_job(compiled.payload, compiled.program_format, 256, custom1=7)
@@ -49,7 +50,7 @@ job.wait()
 counts = job.get_counts()
 assert sum(counts.values()) == 256, counts
 assert set(counts) == {"100", "111"}, counts
-print(f"[mqt-cc-smoke] compiled QIR -> QDMI DDSIM: {counts}")
+print(f"[mqt-cc-smoke-test] compiled QIR -> QDMI DDSIM: {counts}")
 
-print("MQT-CC QIR SMOKE: PASS")
+print("MQT-CC QIR SMOKE TEST: PASS")
 PY

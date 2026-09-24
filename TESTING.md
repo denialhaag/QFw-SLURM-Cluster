@@ -198,17 +198,17 @@ environment allows the compiler and QFw to use different Qiskit versions.
 `do_qfw_build.sh` builds the mounted MQT Core checkout into
 `/workspace/qfw-container-base/mqt-cc-venv` unless `--skip-venv` is used.
 
-`shared-dir/mqt-cc-smoke.sbatch` compiles a Qiskit circuit for MQT Core's bundled
-IQM Garnet model to QIR Base. It uses QDMI to read the model's capabilities and
-run the QIR on local DDSIM. The model is a historical hardware snapshot, not
-live device discovery. This check makes no hardware calls and does not exercise
+`shared-dir/mqt-cc-smoke-test.sbatch` compiles a Qiskit circuit for
+MQT Core's bundled IQM Garnet model to QIR Base. It uses QDMI to read the
+model's capabilities and run the QIR on local DDSIM. The model is a
+historical hardware snapshot, not live device discovery. This check makes no hardware calls and does not exercise
 QFw submission or QRMI. The image build runs it too.
 
 Test the image installation:
 
 ```bash
 docker exec -w /workspace/qfw-container-base slurmctld \
-  bash mqt-cc-smoke.sbatch 2>&1 | tee shared-dir/mqt-cc-smoke.out
+  bash mqt-cc-smoke-test.sbatch 2>&1 | tee shared-dir/mqt-cc-smoke-test.out
 ```
 
 For the developer environment, add
@@ -217,11 +217,11 @@ To test on a Slurm application node, submit from inside `slurmctld`:
 
 ```bash
 cd /workspace/qfw-container-base
-sbatch --wait mqt-cc-smoke.sbatch
+sbatch --wait mqt-cc-smoke-test.sbatch
 ```
 
 The job uses the `normal` partition and needs no QPU allocation. Success ends
-with `MQT-CC QIR SMOKE: PASS`.
+with `MQT-CC QIR SMOKE TEST: PASS`.
 
 ## What to capture
 
@@ -229,5 +229,5 @@ The full `shim-smoke.out`, in particular the qubit and edge counts from each
 leg, whether the QRMI leg ran or reported unavailable, and whether the
 `cross-library: ... agree` line appeared.
 
-For the `mqt-cc` smoke test, capture `mqt-cc-smoke.out` or the Slurm job's
-`mqt-cc-smoke.<job-id>.out`.
+For the `mqt-cc` smoke test, capture `mqt-cc-smoke-test.out` or the Slurm job's
+`mqt-cc-smoke-test.<job-id>.out`.
