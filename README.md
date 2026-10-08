@@ -29,6 +29,13 @@ SLURM SPANK plugin) and [QDMI] (via IQM's `iqm-qdmi` reference implementation).
 - [Detailed Reference](#detailed-reference)
 - [Troubleshooting](#troubleshooting)
 
+The QDMI dependency set is owned by the QFw checkout's
+`setup/qdmi-requirements.txt`. The image and `do_qfw_build.sh` install that same
+file. Select a QFw checkout containing that file with `do_configure.sh`'s
+`--qfw-repository` and `--qfw-ref` options, and use the matching checkout on the
+shared mount for developer builds. Update that file together with QFw's legacy
+result handling when adopting the coordinated Core/IQM/Braket releases.
+
 ## Build The Environment
 
 <details open>

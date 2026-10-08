@@ -412,12 +412,9 @@ RUN set -ex \
     && test -x "${TNQVM_PREFIX}/bin/circuit_runner.tnqvm" \
     && test -f "${TNQVM_PREFIX}/xacc/plugins/libtnqvm.so"
 
-# Keep the QFw shim's Python dependencies aligned with do_qfw_build.sh.
-# Its QDMI driver needs mqt.core.qdmi.driver and the device libraries it
-# drives: IQM's (iqm-qdmi) and Amazon Braket's (amazon-braket-qdmi, MQSC's
-# library, built on QDMI 1.3.3 like iqm-qdmi 1.4; 1.2.0 is the last release
-# on that QDMI, so it is pinned, and its extras need mqt-core 4, so none are
-# installed). setup/requirements.txt supplies Qiskit.
+# QFw owns the matched Core/provider versions and temporary compatibility
+# comments in setup/qdmi-requirements.txt. Use the same file for image and
+# developer installs so a coordinated release update has one owner.
 # DEFw finds libfabric through pkg-config. Without libfabric's .pc file on the
 # search path it still builds, as a TCP-only transport, so the last check makes
 # sure the installed library links libfabric.
@@ -429,9 +426,7 @@ RUN set -ex \
         -r "${QFW_IMAGE_SOURCE}/setup/build-requirements.txt" \
         -r "${QFW_IMAGE_SOURCE}/setup/requirements.txt" \
         "qrmi==${QRMI_VERSION}" \
-        'iqm-qdmi>=1.4' \
-        'amazon-braket-qdmi==1.2.0' \
-        'mqt-core==3.9.2' \
+        -r "${QFW_IMAGE_SOURCE}/setup/qdmi-requirements.txt" \
         'jsonschema>=4' \
     && export PKG_CONFIG_PATH="${LIBFABRIC_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}" \
     && PATH="${QFW_IMAGE_VENV}/bin:${PATH}" cmake \

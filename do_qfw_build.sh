@@ -186,18 +186,10 @@ if [ "${QFW_SKIP_VENV}" != "true" ]; then
         echo "No QRMI version pin available; installing unpinned qrmi" >&2
         uv pip install qrmi
     fi
-    # The QFw driver needs the IQM device library, ID, and prefix. Version 1.4
-    # also provides the queue properties used with QDMI 1.3.3.
-    uv pip install 'iqm-qdmi>=1.4'
-
-    # The same driver reaches Amazon Braket through MQSC's device library.
-    # 1.2.0 is the last release on QDMI 1.3.3, the QDMI iqm-qdmi 1.4 uses, so
-    # it is pinned; its qiskit and pennylane extras need mqt-core 4, so none
-    # are installed.
-    uv pip install 'amazon-braket-qdmi==1.2.0'
-
-    # The QFw driver imports mqt.core.qdmi.driver, available since 3.9.
-    uv pip install 'mqt-core==3.9.2'
+    # Resolve the matched Core/provider set owned by this QFw checkout.
+    # Keep the image install on the same file; its comments name the temporary
+    # compatibility constraints to remove with the coordinated releases.
+    uv pip install -r "${QFW_SRC}/setup/qdmi-requirements.txt"
 
     # The bundled QHW packages (qhw-data, qhw-iqm, qhw-admission, qhw-scheduler)
     # are installed into site-packages by file copy, so their declared
